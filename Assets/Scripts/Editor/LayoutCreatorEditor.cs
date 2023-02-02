@@ -34,8 +34,36 @@ public class LayoutCreatorEditor : Editor
             {
                 layoutCreator.redraw();
             }
+            bool testRoom = EditorGUILayout.Toggle("Test Room", layoutCreator.testRoom);
+            layoutCreator.testRoom = testRoom;
+            if(layoutCreator.testRoomVertices.Count != 4) 
+                layoutCreator.testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
+            if (testRoom)
+            {
+                using(new GUILayout.VerticalScope())
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        using(new EditorGUILayout.HorizontalScope())
+                        {
+                            EditorGUILayout.LabelField("Vertex " + i);
+                            float x = FloatField("X", layoutCreator.testRoomVertices[i].x);
+                            float y = FloatField("Y", layoutCreator.testRoomVertices[i].y);
+                            layoutCreator.testRoomVertices[i] = new(x, y);
+                        }
+                    }
+                }
+            }
         }
         serializedObject.ApplyModifiedProperties();
+    }
+
+    //from https://forum.unity.com/threads/remove-empty-space-between-the-editorguilayout-textfields-label-and-inputbox.181115/
+    public static float FloatField(string label, float number)
+    {
+        var dimensions = GUI.skin.label.CalcSize(new GUIContent(label));
+        EditorGUIUtility.labelWidth = dimensions.x;
+        return EditorGUILayout.FloatField(label, number);
     }
 
     public void OnSceneGUI()
