@@ -1,9 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class RoomGeneratorOptions : MonoBehaviour
 {
+    [Header("Constants")]
+    public Vector2 playArea = new Vector2(10, 10);
+    public float playAreaWallHeight = 3f;
+    public Vector3 bottomLeftMostPoint = new Vector3(0, 0, 0);
+    public Vector3 playerStartingPoint = new Vector3(1, 0, 1);
+
     [Header("General")]
     [Range(0,10)]
     public int minimumRoomSize = 1;
@@ -23,6 +27,14 @@ public class RoomGeneratorOptions : MonoBehaviour
     public int maxNumberOfSamplePointsPerEdge = 2;
     [Range(0,10f)]
     public float maxMagnitudeOfSamplePointsGoingAway = 1.5f;
+    [Range(0, 10)]
+    public int maxNumberOfDoorsPerRoom = 4;
+    [Range(0, 10)]
+    public int minNumberOfDoorsPerRoom = 1;
+    [Range(0, 10f)]
+    public float doorHeight = 2f;
+    [Range(0, 10f)]
+    public float doorWidth = 1f;
 
     [Header("Layout")]
     public LayoutType type = LayoutType.arcs;

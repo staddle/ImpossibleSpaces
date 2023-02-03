@@ -24,7 +24,7 @@ public class LayoutCreatorEditor : Editor
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
-        using(new GUILayout.VerticalScope())
+        using (new GUILayout.VerticalScope())
         {
             if (GUILayout.Button("Regenerate Layout", buttonStyle()))
             {
@@ -34,6 +34,17 @@ public class LayoutCreatorEditor : Editor
             {
                 layoutCreator.redraw();
             }
+            if(layoutCreator.currentRoom != null)
+                using (new GUILayout.HorizontalScope())
+                {
+                    for(int i=1; i < layoutCreator.currentRoom.doors.Count; i++)
+                    {
+                        if(GUILayout.Button("Door "+i))
+                        {
+                            layoutCreator.goNextRoom(i);
+                        }
+                    }
+                }
             bool testRoom = EditorGUILayout.Toggle("Test Room", layoutCreator.testRoom);
             layoutCreator.testRoom = testRoom;
             if(layoutCreator.testRoomVertices.Count != 4) 
@@ -68,7 +79,7 @@ public class LayoutCreatorEditor : Editor
 
     public void OnSceneGUI()
     {
-        Handles.DrawBezier(Vector3.zero, new Vector3(10, 0, 0), Vector3.zero, Vector3.zero, Color.black, null, 0);
+       /* Handles.DrawBezier(Vector3.zero, new Vector3(10, 0, 0), Vector3.zero, Vector3.zero, Color.black, null, 0);
 
         if(layoutCreator.roomGeneratorOptions != null && layoutCreator.roomGeneratorOptions.showFinishedRoom && layoutCreator.roomSegments != null && layoutCreator.roomSegments.Count > 0)
         {
@@ -80,6 +91,6 @@ public class LayoutCreatorEditor : Editor
                     segment.drawHandles();
                 }
             }
-        }
+        }*/
     }
 }

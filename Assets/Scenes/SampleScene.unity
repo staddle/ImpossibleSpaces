@@ -515,6 +515,37 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 842422644}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &920663875
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 920663876}
+  m_Layer: 0
+  m_Name: Rooms
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &920663876
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920663875}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.6086757, y: -16.210104, z: 3.360774}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &945631406
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -845,7 +876,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1921636977}
   - component: {fileID: 1921636976}
-  - component: {fileID: 1921636975}
   - component: {fileID: 1921636978}
   m_Layer: 0
   m_Name: LayoutCreator
@@ -854,22 +884,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1921636975
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1921636974}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2dcbe55f6debf21449ae858df733372e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playArea: {x: 10, y: 10}
-  playAreaWallHeight: 3
-  bottomLeftMostPoint: {x: 0, y: 0, z: 0}
-  playerStartingPoint: {x: 1, y: 0, z: 1}
 --- !u!114 &1921636976
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -883,6 +897,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roomGeneratorOptions: {fileID: 0}
+  testRoom: 0
+  testRoomVertices:
+  - {x: 0, y: 0}
+  - {x: 0, y: 0}
+  - {x: 0, y: 0}
+  - {x: 0, y: 0}
+  currentRoom: {fileID: 0}
 --- !u!4 &1921636977
 Transform:
   m_ObjectHideFlags: 0
@@ -910,6 +931,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f627acc1625f3e418ff21cee15bd2ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playArea: {x: 10, y: 10}
+  playAreaWallHeight: 3
+  bottomLeftMostPoint: {x: 0, y: 0, z: 0}
+  playerStartingPoint: {x: 1, y: 0, z: 1}
   minimumRoomSize: 1
   maximumRoomSize: 2
   probabilityOfNextRoom: 0.5
@@ -919,6 +944,10 @@ MonoBehaviour:
   lengthInRhythmDirectionWherePlayAreaCannotEnd: 1
   maxNumberOfSamplePointsPerEdge: 2
   maxMagnitudeOfSamplePointsGoingAway: 1.5
+  maxNumberOfDoorsPerRoom: 4
+  minNumberOfDoorsPerRoom: 1
+  doorHeight: 2
+  doorWidth: 1
   type: 1
   useOnlyVertices: 1
   invertAfterEachPoint: 1

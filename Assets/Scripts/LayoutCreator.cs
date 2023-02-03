@@ -1,95 +1,64 @@
 using Assets.Scripts;
-using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Assertions;
-using UnityEngine.UIElements;
 
 public class LayoutCreator : MonoBehaviour
 {
-    Constants CONSTANTS;
-    System.Random random = new System.Random();
-    LinkedList<GeneralLayoutRoom> generalLayoutRooms = new LinkedList<GeneralLayoutRoom>();
-    GeneralLayoutRoom playArea, bigRoom;
-    bool createBigRoomStart = false;
-    LinkedList<Vector2> sampledPoints = new LinkedList<Vector2>();
+    public static GeneralLayoutRoom playArea;
     public RoomGeneratorOptions roomGeneratorOptions;
-    public LinkedList<RoomSegment> roomSegments = new LinkedList<RoomSegment>();
     public bool testRoom = false;
     public List<Vector2> testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
+    public Node currentRoom;
 
     // Start is called before the first frame update
     void Start()
     {
-        Constants constantsComponent = gameObject.GetComponent<Constants>();
-        if (constantsComponent != null)
-            CONSTANTS = constantsComponent;
-        else
-            Debug.LogError("LayoutCreator.Start: Could not find Constants component. Make sure both components are attached to the same GameObject.");
-
-        playArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, CONSTANTS.playArea.y), new(CONSTANTS.playArea.x, CONSTANTS.playArea.y), new(CONSTANTS.playArea.x, 0) });
-
-        runTests();
-
-        buildPlayArea(CONSTANTS.playArea, CONSTANTS.playAreaWallHeight);
-        setUpPlayerPosition(CONSTANTS.playerStartingPoint);
         roomGeneratorOptions = gameObject.GetComponent<RoomGeneratorOptions>();
-        createRandomRoom(new Vector2(0, 0), Vector2.up, roomGeneratorOptions);
-        //createTestRoom();
+        playArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, roomGeneratorOptions.playArea.y), 
+            new(roomGeneratorOptions.playArea.x, roomGeneratorOptions.playArea.y), new(roomGeneratorOptions.playArea.x, 0) });;
+
+        buildPlayArea(roomGeneratorOptions.playArea, roomGeneratorOptions.playAreaWallHeight);
+        setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
+        currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, roomGeneratorOptions);
+        currentRoom.gameObject.SetActive(true);
     }
 
     // Update is called once per frame
     void Update()
     {
-        /*if(createBigRoomStart)
-        {
-            bigRoom = createBigRoom();
-            createBigRoomStart = false;
-        }*/
+
     }
 
     public void regenerateLayout()
     {
-        generalLayoutRooms.Clear();
-        bigRoom = null;
-        createBigRoomStart = false;
-        sampledPoints.Clear();
-        roomSegments.Clear();
-        createRandomRoom(new Vector2(0, 0), Vector2.up, gameObject.GetComponent<RoomGeneratorOptions>());
+        GameObject roomsParent = GameObject.Find("Rooms");
+        for (int i=0; i<roomsParent.transform.childCount; i++)
+        {
+            Destroy(roomsParent.transform.GetChild(i).gameObject);
+        }
+        currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, gameObject.GetComponent<RoomGeneratorOptions>());
+        currentRoom.gameObject.SetActive(true);
+    }
+
+    public void goNextRoom(int doorNumber)
+    {
+        currentRoom.gameObject.SetActive(false);
+        currentRoom = currentRoom.doors[doorNumber].nextNode;
+        currentRoom.gameObject.SetActive(true);
     }
 
     public void redraw()
     {
-        roomSegments.Clear();
-        connectPoints(sampledPoints);
-    }
-
-    private void runTests()
-    {
-        GeneralLayoutRoom testArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, 10), new(10, 10), new(10, 0) });
-        Vector2 inside = new(5, 5);
-        Vector2 outside = new(5, 15);
-        Assert.IsTrue(testArea.isInside(inside));
-        Assert.IsFalse(testArea.isInside(outside));
-    }
-
-    private void createTestRoom()
-    {
-        generalLayoutRooms.Clear();
-        /*generalLayoutRooms.AddLast(new GeneralLayoutRoom(new List<Vector2>() { new(-1, 0), new(3, 0), new(3, 1), new(-1, 1) }));
-        generalLayoutRooms.AddLast(new GeneralLayoutRoom(new List<Vector2>() { new(2, 1), new(11, 1), new(11, 5), new(2, 5) }));
-        generalLayoutRooms.AddLast(new GeneralLayoutRoom(new List<Vector2>() { new(8, 5), new(12, 5), new(12, 9), new(8, 9) }));
-        generalLayoutRooms.AddLast(new GeneralLayoutRoom(new List<Vector2>() { new(3, 9), new(10.5f, 9), new(10.5f, 13), new(3, 13) }));*/
-        Vector2 point1 = new(1.5f, 1.5f), point2 = new(2.5f, 1.5f);
-        roomSegments.AddLast(new BezierRoomSegment(point1, point2, point1+Vector2.up, point2+Vector2.up));
+        //roomSegments.Clear();
+        //connectPoints(sampledPoints);
     }
 
     private void OnDrawGizmos()
     {
-        if (roomGeneratorOptions == null)
+        /*if (roomGeneratorOptions == null)
             return;
         if (roomGeneratorOptions.showGeneralLayoutRooms)
         {
@@ -125,13 +94,11 @@ public class LayoutCreator : MonoBehaviour
             {
                 segment.drawGizmos(roomGeneratorOptions.bezierSubdivisions, roomGeneratorOptions.showBezierTangents);
             }
-        }
+        }*/
     }
 
     private void buildPlayArea(Vector2 playArea, float wallHeight)
     {
-        //build play area a bit bigger to stop z-fighting of room and playarea
-
         GameObject parentObject = new GameObject("PlayArea");
         parentObject.transform.position = new Vector3(0, 0, 0);
         GameObject wall1 = GameObject.CreatePrimitive(PrimitiveType.Plane);
@@ -146,6 +113,7 @@ public class LayoutCreator : MonoBehaviour
             wall.transform.localScale = new Vector3(1, 1, wallHeight / 10);
         }
 
+        //build play area a bit bigger to stop z-fighting of room and play area
         wall1.transform.position = new Vector3(playArea.x / 2, wallHeight / 2, 0 - 0.01f);
         wall1.transform.Rotate(Vector3.right, 90);
 
@@ -166,7 +134,7 @@ public class LayoutCreator : MonoBehaviour
         Camera.main.transform.Translate(startPosition);
     }
 
-    private void createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, RoomGeneratorOptions options)
+    public static Node createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, Node previousRoom, RoomGeneratorOptions options, List<Vector2> testVertices = null)
     {
         /* Steps:
             0. Have Starting Point
@@ -174,24 +142,23 @@ public class LayoutCreator : MonoBehaviour
             2. Sample points along general layout with random offsets
             3. Connect points via different connector patterns
             4. Draw mesh    */
-
+        System.Random random = new System.Random();
 
         // first room from starting point
-        if(!testRoom)
+        LinkedList<GeneralLayoutRoom> generalLayoutRooms = new LinkedList<GeneralLayoutRoom>();
+        if(testVertices == null)
         {
-            GeneralLayoutRoom prevRoom = createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options);
+            GeneralLayoutRoom prevRoom = createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options, testVertices);
             generalLayoutRooms.AddLast(prevRoom);
-            //Debug.Log(prevRoom.ToString());
 
             // create next room(s) with starting point on previous room's edge but inside playarea
             for (int i = 0; i < options.maximumRoomSize; i++)
             {
                 if (i < options.minimumRoomSize || random.NextDouble() < Math.Pow(options.probabilityOfNextRoom * options.probabilityMultiplierPerNextRoom, i - options.minimumRoomSize))
                 {
-                    if (createNextRandomGeneralyLayoutRoom(prevRoom, options, out prevRoom))
+                    if (createNextRandomGeneralLayoutRoom(prevRoom, options, out prevRoom, testVertices))
                     {
                         generalLayoutRooms.AddLast(prevRoom);
-                        //Debug.Log(prevRoom.ToString());
                     } else
                     {
                         break;
@@ -205,63 +172,71 @@ public class LayoutCreator : MonoBehaviour
         }
         else
         {
-            //generalLayoutRooms.AddLast(new GeneralLayoutRoom(new List<Vector2>() { new(-2, 0), new(4, 0), new(-2, 12), new(4, 12) }));
-            generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options));
+            generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options, testVertices));
         }
 
 
         // create one big room from generalLayoutRooms
-        bigRoom = createBigRoom();
+        GeneralLayoutRoom bigRoom = createBigRoom(generalLayoutRooms);
 
         // sample points
-        sampledPoints = samplePoints(bigRoom);
+        LinkedList<Vector2> sampledPoints = samplePoints(bigRoom, options);
 
         // connect points
-        connectPoints(sampledPoints);
+        LinkedList<RoomSegment> roomSegments = connectPoints(sampledPoints, options);
 
-        // generate mesh
-        generateMesh(roomSegments);
+        GameObject roomGameObject = new GameObject("Room" + Time.fixedTime);
+        roomGameObject.transform.parent = GameObject.Find("Rooms").transform;
+        roomGameObject.SetActive(false);
+
+        Node room = roomGameObject.AddComponent<Node>();
+        room.setupNode(roomSegments, previousRoom, options);
+
+
+        // generate doors
+        room.generateDoors();
+
+        // draw mesh
+        room.createMesh(options.playAreaWallHeight, options.roomMaterial);
+
+        return room;
     }
 
-    private void generateMesh(LinkedList<RoomSegment> segments)
-    {
-        GameObject gameObject = GameObject.Find("Room");
-        Destroy(gameObject);
-        Node node;
-        gameObject = new GameObject("Room");
-        gameObject.transform.parent = transform;
-        node = gameObject.AddComponent<Node>();
-        node.createNode(segments, CONSTANTS.playAreaWallHeight, roomGeneratorOptions.roomMaterial);
-    }
-
-    private void connectPoints(LinkedList<Vector2> points)
+    private static LinkedList<RoomSegment> connectPoints(LinkedList<Vector2> points, RoomGeneratorOptions roomGeneratorOptions)
     {
         if (roomGeneratorOptions.type == LayoutType.arcs)
-            connectPointsByAllArcs(points);
+            return connectPointsByAllArcs(points, roomGeneratorOptions);
         else if (roomGeneratorOptions.type == LayoutType.straights)
-            connectPointsByStraights(points);
+            return connectPointsByStraights(points);
         else if (roomGeneratorOptions.type == LayoutType.beziers)
-            connectPointsByBeziers(points);
+            return connectPointsByBeziers(points, roomGeneratorOptions);
+        return new LinkedList<RoomSegment>();
     }
 
-    private void connectPointsByAllArcs(LinkedList<Vector2> points)
+    private static LinkedList<RoomSegment> connectPointsByAllArcs(LinkedList<Vector2> points, RoomGeneratorOptions roomGeneratorOptions)
     {
+        LinkedList<RoomSegment> result = new LinkedList<RoomSegment>();
         for (int i = 0; i < points.Count; i++)
         {
-            roomSegments.AddLast(new ArcRoomSegment(points.ElementAt(i), points.ElementAt((i + 1) % points.Count), roomGeneratorOptions.invertAfterEachPoint ? i % 2 == 0 : true));
+            result.AddLast(new ArcRoomSegment(points.ElementAt(i), points.ElementAt((i + 1) % points.Count), roomGeneratorOptions.invertAfterEachPoint ? i % 2 == 0 : true));
         }
+        return result;
     }
 
-    private void connectPointsByStraights(LinkedList<Vector2> points)
+    private static LinkedList<RoomSegment> connectPointsByStraights(LinkedList<Vector2> points)
     {
+        LinkedList<RoomSegment> result = new LinkedList<RoomSegment>();
         for (int i = 0; i < points.Count; i++)
         {
-            roomSegments.AddLast(new StraightRoomSegment(points.ElementAt(i), points.ElementAt((i + 1) % points.Count)));
+            result.AddLast(new StraightRoomSegment(points.ElementAt(i), points.ElementAt((i + 1) % points.Count)));
         }
+        return result;
     }
 
-    private void connectPointsByBeziers(LinkedList<Vector2> points)
+    private static LinkedList<RoomSegment> connectPointsByBeziers(LinkedList<Vector2> points, RoomGeneratorOptions roomGeneratorOptions)
     {
+        LinkedList<RoomSegment> result = new LinkedList<RoomSegment>();
+        System.Random random = new System.Random();
         for (int i = 0; i < points.Count; i++)
         {
             Vector2 startPoint = points.ElementAt(i);
@@ -277,16 +252,17 @@ public class LayoutCreator : MonoBehaviour
             Vector2 nextStart2End = points.ElementAt((i + 2) % points.Count) - endPoint;
             Vector2 endTangent = rotateVector(end2Start, invertVector(end2Start), random.Next(roomGeneratorOptions.bezierMaxTangentAngle * 2) - roomGeneratorOptions.bezierMaxTangentAngle);
             BezierRoomSegment roomSegment = new BezierRoomSegment(startPoint, endPoint, startPoint+startTangent, endPoint+endTangent);
-            roomSegments.AddLast(roomSegment);
+            result.AddLast(roomSegment);
         }
+        return result;
     }
 
-    private Vector2 invertVector(Vector2 vec)
+    private static Vector2 invertVector(Vector2 vec)
     {
         return new(vec.y, -vec.x);
     }
 
-    private Vector2 rotateVector(Vector2 start, Vector2 towards, float angle)
+    private static Vector2 rotateVector(Vector2 start, Vector2 towards, float angle)
     {
         start.Normalize();
 
@@ -300,10 +276,11 @@ public class LayoutCreator : MonoBehaviour
         return new((float)x, (float)y);*/
     }
 
-    private LinkedList<Vector2> samplePoints(GeneralLayoutRoom room)
+    private static LinkedList<Vector2> samplePoints(GeneralLayoutRoom room, RoomGeneratorOptions options)
     {
         LinkedList<Vector2> sampledPoints = new LinkedList<Vector2>();
-        if (roomGeneratorOptions.useOnlyVertices)
+        System.Random random = new System.Random();
+        if (options.useOnlyVertices)
         {
             room.vertices.ForEach(x => sampledPoints.AddLast(x));
         }
@@ -311,7 +288,7 @@ public class LayoutCreator : MonoBehaviour
         {
             for(int i=0; i < room.numberOfEdges; i++)
             {
-                int numberOfSamplePoints = random.Next(1, roomGeneratorOptions.maxNumberOfSamplePointsPerEdge);
+                int numberOfSamplePoints = random.Next(1, options.maxNumberOfSamplePointsPerEdge);
                 Vector2 direction = room.vertices[(i + 1) % room.numberOfEdges] - room.vertices[i];
                 float maxDistance = direction.magnitude;
                 direction.Normalize();
@@ -324,7 +301,7 @@ public class LayoutCreator : MonoBehaviour
 
                     Vector2 newPoint = lastPoint + direction * randomFloat(0, availableDistance.magnitude > maxDistance ? maxDistance : availableDistance.magnitude);
                     Vector2 orthogonalDirection = new(direction.y, -direction.x);
-                    sampledPoints.AddLast(newPoint + orthogonalDirection * randomFloat(-roomGeneratorOptions.maxMagnitudeOfSamplePointsGoingAway, roomGeneratorOptions.maxMagnitudeOfSamplePointsGoingAway));
+                    sampledPoints.AddLast(newPoint + orthogonalDirection * randomFloat(-options.maxMagnitudeOfSamplePointsGoingAway, options.maxMagnitudeOfSamplePointsGoingAway));
                     lastPoint = newPoint;
                 }
             }
@@ -332,12 +309,12 @@ public class LayoutCreator : MonoBehaviour
         return sampledPoints;
     }
 
-    public GeneralLayoutRoom createBigRoom()
+    public static GeneralLayoutRoom createBigRoom(LinkedList<GeneralLayoutRoom> generalLayoutRooms)
     {
-        return new GeneralLayoutRoom(createBigRoomRec(0, new List<Vector2>()));
+        return new GeneralLayoutRoom(createBigRoomRec(0, new List<Vector2>(), generalLayoutRooms));
     }
 
-    private List<Vector2> createBigRoomRec(int roomIndex, List<Vector2> bigRoomVertices, int startWith=0)
+    private static List<Vector2> createBigRoomRec(int roomIndex, List<Vector2> bigRoomVertices, LinkedList<GeneralLayoutRoom> generalLayoutRooms, int startWith=0)
     {
         for (int i = 0; i < generalLayoutRooms.ElementAt(roomIndex).numberOfEdges; i++)
         {
@@ -356,14 +333,15 @@ public class LayoutCreator : MonoBehaviour
                     //int nextStartWith = room.isOnEdge(nextRoom.vertices[0]) & !room.isOnEdge(nextRoom.vertices[1]) ? 1 : 0;
                     int nextStartWith = 1;
                     // if point 0 or 4 of next room is between last added point and next-to-add point, add next room first
-                    bigRoomVertices = createBigRoomRec(roomIndex + 1, bigRoomVertices, nextStartWith);
+                    bigRoomVertices = createBigRoomRec(roomIndex + 1, bigRoomVertices, generalLayoutRooms, nextStartWith);
                 }
             }
         }
         return bigRoomVertices;
     }
 
-    private bool createNextRandomGeneralyLayoutRoom(GeneralLayoutRoom previousRoom, RoomGeneratorOptions options, out GeneralLayoutRoom nextRoom)
+    private static bool createNextRandomGeneralLayoutRoom(GeneralLayoutRoom previousRoom, RoomGeneratorOptions options, 
+        out GeneralLayoutRoom nextRoom, List<Vector2> testRoomVertices = null)
     {
         (Vector2 nextStartingPoint, Vector2 nextRhythmDirection) = getPointOnRoomEdge(previousRoom);
         nextRoom = null;
@@ -383,11 +361,11 @@ public class LayoutCreator : MonoBehaviour
         }
         if (maxIterationsExceeded)
         {
-            Debug.LogError("Iterations exceeded for finding point on previous room where next room can be joined.");
+            Debug.Log("Iterations exceeded for finding point on previous room where next room can be joined.");
             return false;
         }
 
-        nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, options);
+        nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, options, testRoomVertices);
         return true;
     }
 
@@ -396,8 +374,9 @@ public class LayoutCreator : MonoBehaviour
     /// </summary>
     /// <param name="room"></param>
     /// <returns></returns>
-    private (Vector2, Vector2) getPointOnRoomEdge(GeneralLayoutRoom room)
+    private static (Vector2, Vector2) getPointOnRoomEdge(GeneralLayoutRoom room)
     {
+        System.Random random = new System.Random();
         int index = random.Next(0, room.numberOfEdges-1);
         Vector2 direction = room.vertices[(index + 1) % room.numberOfEdges] - room.vertices[index];
         Vector2 pointOnEdge = room.vertices[index] + (float)random.NextDouble() * direction;
@@ -419,11 +398,12 @@ public class LayoutCreator : MonoBehaviour
         return new Vector3(v2.x, y, v2.y);
     }
 
-    private GeneralLayoutRoom createRandomGeneralLayoutRoom(Vector2 startingPoint, Vector2 rhythmDirection, RoomGeneratorOptions options)
+    private static GeneralLayoutRoom createRandomGeneralLayoutRoom(Vector2 startingPoint, Vector2 rhythmDirection, RoomGeneratorOptions options, List<Vector2> testRoomVertices = null)
     {
+        System.Random random = new System.Random();
         Vector2 point1, point2, point3, point4, rhythmDirectionPerpendicular;
         float depth;
-        if(!testRoom)
+        if (testRoomVertices == null)
         {
             float sign = (random.Next(0, 1) - 0.5f) * 2;
             float width = randomFloat(options.minimumGeneralLayoutWidth, options.maximumGeneralLayoutRoomSize);
@@ -438,7 +418,7 @@ public class LayoutCreator : MonoBehaviour
 
             // Second point is extruded in other direction of first point (so door lays somewhere in between those two points and then some distance back to give room area
             point2 = startingPoint + new Vector2(-rhythmDirectionPerpendicular.x, -rhythmDirectionPerpendicular.y) * (width - width * distribution);
-        } 
+        }
         else
         {
             point1 = testRoomVertices[0];
@@ -448,8 +428,24 @@ public class LayoutCreator : MonoBehaviour
         }
 
         // handle what happens when room goes outside playarea
-        point1 = handlePointOutside(point1, rhythmDirectionPerpendicular);
-        point2 = handlePointOutside(point2, rhythmDirectionPerpendicular);
+        Vector2 newPoint1 = handlePointOutside(point1, rhythmDirectionPerpendicular);
+        Vector2 newPoint2 = handlePointOutside(point2, rhythmDirectionPerpendicular);
+
+        // if room is too small after moving points inside playArea, we can move the other point to make room bigger again
+        float dist = Math.Abs(Vector2.Distance(newPoint1, newPoint2));
+        if (dist < options.minimumGeneralLayoutWidth)
+        {
+            if(newPoint1 != point1)
+            {
+                newPoint2 = newPoint2 + (newPoint2 - newPoint1).normalized * (options.minimumGeneralLayoutWidth - dist);
+            } 
+            else if (newPoint2 != point2)
+            {
+                newPoint1 = newPoint1 + (newPoint1 - newPoint2).normalized * (options.minimumGeneralLayoutWidth - dist);
+            }
+        }
+        point1 = newPoint1;
+        point2 = newPoint2;
 
         // Third and fourth points are just first two points but the depth of the room added (rectangular room)
         point3 = point2 + rhythmDirection * depth;
@@ -458,6 +454,7 @@ public class LayoutCreator : MonoBehaviour
         // check when extruding in depth if point3 / point4 lay outside of playarea
         Vector2 newPoint3 = handlePointOutside(point3, rhythmDirection);
         Vector2 newPoint4 = handlePointOutside(point4, rhythmDirection);
+        // case: point3 was outside but point4 not
         if(point3 != newPoint3 && newPoint4 == point4)
         {
             float newDepth = Math.Abs(Vector2.Distance(point2, newPoint3));
@@ -466,6 +463,7 @@ public class LayoutCreator : MonoBehaviour
             point4 = newPoint4;
             newPoint4 = newNewPoint4;
         } 
+        // case: point4 was outside but point3 not
         if(point4 != newPoint4 && point3 == newPoint3)
         {
             float newDepth = Math.Abs(Vector2.Distance(point1, newPoint4));
@@ -480,6 +478,7 @@ public class LayoutCreator : MonoBehaviour
             }
             point3 = newNewPoint3;
         }
+        // case: both points outside
         if(point3 != newPoint3 && point4 != newPoint4)
         {
             float distanceP3 = Math.Abs(Vector2.Distance(point2, newPoint3));
@@ -501,9 +500,9 @@ public class LayoutCreator : MonoBehaviour
         return new GeneralLayoutRoom(new List<Vector2>(){ point1, point2, point3, point4 });
     }
 
-    private Vector2 handlePointOutside(Vector2 point, Vector2 direction)
+    private static Vector2 handlePointOutside(Vector2 point, Vector2 direction)
     {
-        Vector2 pA = CONSTANTS.playArea;
+        Vector2 pA = playArea.vertices[2];
         if (point.x < 0)
         {
             // calculate crossing point of playarea and room area
@@ -556,22 +555,10 @@ public class LayoutCreator : MonoBehaviour
         }
     }
 
-    private float randomFloat(float min, float max)
+    private static float randomFloat(float min, float max)
     {
+        System.Random random = new System.Random();
         return (float)random.NextDouble() * (max - min) + min;
-    }
-
-    private Vector2 projectPointToPlayArea(Vector2 point)
-    {
-        if (point.x < 0)
-            point.x = 0;
-        if (point.x > CONSTANTS.playArea.x)
-            point.x = CONSTANTS.playArea.x;
-        if (point.y < 0)
-            point.y = 0;
-        if (point.y > CONSTANTS.playArea.y)
-            point.y = CONSTANTS.playArea.y;
-        return point;
     }
 
     public static void DrawString(string text, Vector3 worldPos, Color? textColor = null, Color? backColor = null)
