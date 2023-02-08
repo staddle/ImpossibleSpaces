@@ -22,7 +22,7 @@ public class LayoutCreator : MonoBehaviour
 
         buildPlayArea(roomGeneratorOptions.playArea, roomGeneratorOptions.playAreaWallHeight);
         setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
-        currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, roomGeneratorOptions);
+        currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, roomGeneratorOptions, testRoom ? testRoomVertices : null);
         currentRoom.gameObject.SetActive(true);
     }
 
@@ -34,13 +34,16 @@ public class LayoutCreator : MonoBehaviour
 
     public void regenerateLayout()
     {
-        GameObject roomsParent = GameObject.Find("Rooms");
-        for (int i=0; i<roomsParent.transform.childCount; i++)
+        if(playArea != null)
         {
-            Destroy(roomsParent.transform.GetChild(i).gameObject);
+            GameObject roomsParent = GameObject.Find("Rooms");
+            for (int i=0; i<roomsParent.transform.childCount; i++)
+            {
+                Destroy(roomsParent.transform.GetChild(i).gameObject);
+            }
+            currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, gameObject.GetComponent<RoomGeneratorOptions>(), testRoom ? testRoomVertices : null);
+            currentRoom.gameObject.SetActive(true);
         }
-        currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, gameObject.GetComponent<RoomGeneratorOptions>());
-        currentRoom.gameObject.SetActive(true);
     }
 
     public void goNextRoom(int doorNumber)

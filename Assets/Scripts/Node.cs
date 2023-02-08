@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -37,7 +38,7 @@ public class Node : MonoBehaviour
         {
             if (doors.Count == numberOfDoors)
                 break;
-            if(random.NextDouble() <= probPerSegment)
+            if(random.NextDouble() <= probPerSegment && segments.ElementAt(i).canContainDoor(options.doorWidth, LayoutCreator.playArea))
             {
                 Door door = gameObject.AddComponent<Door>();
                 door.setupDoor(segments.ElementAt(i), this);
@@ -85,20 +86,22 @@ public class Node : MonoBehaviour
                     vertices[1] = vertices[0] + Vector3.up * wallHeight;
                     vertices[3] = new Vector3(straight.endPoint.x, 0, straight.endPoint.y);
                     vertices[2] = vertices[3] + Vector3.up * wallHeight;
-                    double doorStart = random.NextDouble() * (straight.endPoint.x - options.doorWidth);
-                    vertices[7] = vertices[0] + Vector3.right * (float)doorStart;
-                    vertices[4] = vertices[7] + Vector3.right * options.doorWidth;
+                    double doorStart = random.NextDouble() * (Math.Abs(Vector3.Distance(vertices[3], vertices[0])) - options.doorWidth);
+                    Vector3 doorDirection = vertices[3] - vertices[0];
+                    doorDirection.Normalize();
+                    vertices[7] = vertices[0] + doorDirection * (float)doorStart;
+                    vertices[4] = vertices[7] + doorDirection * options.doorWidth;
                     vertices[5] = vertices[4] + Vector3.up * options.doorHeight;
                     vertices[6] = vertices[7] + Vector3.up * options.doorHeight;
                     doorOnSegment[0].point1 = vertices[7];
                     doorOnSegment[0].point2 = vertices[4];
 
                     List<int> triangles = new List<int>() { 0, 1, 6,
-                                                            0, 6, 7,
-                                                            1, 6, 2,
-                                                            6, 5, 2,
+                                                            6, 7, 0,
+                                                            1, 2, 6,
+                                                            6, 2, 5,
                                                             5, 2, 3,
-                                                            5, 4, 3};
+                                                            3, 4, 5};
                     verticesList.Add(vertices);
                     trianglesList.Add(triangles);
                 }

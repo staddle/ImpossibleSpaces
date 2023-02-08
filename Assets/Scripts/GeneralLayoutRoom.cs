@@ -45,18 +45,26 @@ namespace Assets.Scripts
             return false;
         }
 
-        public bool isOnSpecificEdge(Vector2 point, int edgeIndex)
+        // as per https://stackoverflow.com/a/11912171
+        public bool isOnSpecificEdge(Vector2 C, int edgeIndex)
         {
-            Vector2 point1 = vertices[edgeIndex], point2 = vertices[(edgeIndex + 1) % 4];
+            float THRESHOLD = 0.001f;
+            Vector2 A = vertices[edgeIndex], B = vertices[(edgeIndex + 1) % 4];
+            float distAC = Math.Abs(Vector2.Distance(A, C));
+            float distAB = Math.Abs(Vector2.Distance(A, B));
+            float distBC = Math.Abs(Vector2.Distance(B, C));
 
-            if(Vector2.Angle(Vector2.right, point2 - point1) == Vector2.Angle(Vector2.right, point - point1))
+            return distAC + distBC - distAB < THRESHOLD;
+
+            /*if(Vector2.Angle(Vector2.right, point2 - point1) == Vector2.Angle(Vector2.right, point - point1))
             {
                 // same angle but is point between line points?
                 return Math.Abs(Vector2.Distance(point1, point)) < Math.Abs(Vector2.Distance(point1, point2)) 
                     && Math.Abs(Vector2.Distance(point2, point)) < Math.Abs(Vector2.Distance(point2, point1));
             }
 
-            return false;
+            return false;*/
+
         }
     }
 }

@@ -900,9 +900,9 @@ MonoBehaviour:
   testRoom: 0
   testRoomVertices:
   - {x: 0, y: 0}
-  - {x: 0, y: 0}
-  - {x: 0, y: 0}
-  - {x: 0, y: 0}
+  - {x: 5, y: 0}
+  - {x: 5, y: 5}
+  - {x: 0, y: 5}
   currentRoom: {fileID: 0}
 --- !u!4 &1921636977
 Transform:

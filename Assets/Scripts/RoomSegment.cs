@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using Assets.Scripts;
 using UnityEngine;
 
 public class RoomSegment
@@ -17,6 +16,11 @@ public class RoomSegment
     public virtual void drawHandles()
     {
         Debug.LogError("not implemented");
+    }
+
+    public virtual bool canContainDoor(float doorWidth, GeneralLayoutRoom playArea)
+    {
+        return false;
     }
 
     protected Vector3 Vector2At(Vector2 v2, float y)

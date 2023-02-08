@@ -30,14 +30,14 @@ public class LayoutCreatorEditor : Editor
             {
                 layoutCreator.regenerateLayout();
             }
-            if (GUILayout.Button("Redraw Connections", buttonStyle()))
+            if (GUILayout.Button("Redraw Connections", buttonStyle()))  
             {
                 layoutCreator.redraw();
             }
             if(layoutCreator.currentRoom != null)
                 using (new GUILayout.HorizontalScope())
                 {
-                    for(int i=1; i < layoutCreator.currentRoom.doors.Count; i++)
+                    for(int i=0; i < layoutCreator.currentRoom.doors.Count; i++)
                     {
                         if(GUILayout.Button("Door "+i))
                         {
@@ -79,18 +79,33 @@ public class LayoutCreatorEditor : Editor
 
     public void OnSceneGUI()
     {
-       /* Handles.DrawBezier(Vector3.zero, new Vector3(10, 0, 0), Vector3.zero, Vector3.zero, Color.black, null, 0);
+        /* Handles.DrawBezier(Vector3.zero, new Vector3(10, 0, 0), Vector3.zero, Vector3.zero, Color.black, null, 0);
 
-        if(layoutCreator.roomGeneratorOptions != null && layoutCreator.roomGeneratorOptions.showFinishedRoom && layoutCreator.roomSegments != null && layoutCreator.roomSegments.Count > 0)
+         if(layoutCreator.roomGeneratorOptions != null && layoutCreator.roomGeneratorOptions.showFinishedRoom && layoutCreator.roomSegments != null && layoutCreator.roomSegments.Count > 0)
+         {
+             foreach(RoomSegment segment in layoutCreator.roomSegments)
+             {
+                 if(segment.GetType() != typeof(BezierRoomSegment))
+                 {
+                     Handles.color = segment.color;
+                     segment.drawHandles();
+                 }
+             }
+         }*/
+        if (layoutCreator == null || layoutCreator.currentRoom == null)
+            return;
+        var doors = layoutCreator.currentRoom.doors;
+        if (doors == null)
+            return;
+        for (int i = 0; i < doors.Count; i++)
         {
-            foreach(RoomSegment segment in layoutCreator.roomSegments)
-            {
-                if(segment.GetType() != typeof(BezierRoomSegment))
-                {
-                    Handles.color = segment.color;
-                    segment.drawHandles();
-                }
-            }
-        }*/
+            Door door = doors[i];
+            Vector3 position = door.point1 + (door.point2 - door.point1) / 2;
+            GUIStyle style = new GUIStyle();
+            style.normal = new GUIStyleState();
+            style.normal.textColor = Color.black;
+            style.normal.background = Texture2D.whiteTexture;
+            Handles.Label(position, "Door " + i, style);
+        }
     }
 }
