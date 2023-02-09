@@ -6,7 +6,7 @@ using UnityEngine;
 public class Node : MonoBehaviour
 {
     public List<Door> doors = new List<Door>();
-    LinkedList<RoomSegment> segments;
+    public LinkedList<RoomSegment> segments;
     RoomGeneratorOptions options;
     MeshFilter meshFilter;
     Mesh mesh;
@@ -19,7 +19,7 @@ public class Node : MonoBehaviour
         this.options = options;
 
         // first room doesn't have a back door
-        if(previousNode != null)
+        if(previousNode != null && options.backDoorToPreviousRoom)
         {
             Door door = gameObject.AddComponent<Door>();
             door.setupDoor(segments.First.Value, this);
@@ -38,7 +38,7 @@ public class Node : MonoBehaviour
         {
             if (doors.Count == numberOfDoors)
                 break;
-            if(random.NextDouble() <= probPerSegment && segments.ElementAt(i).canContainDoor(options.doorWidth, LayoutCreator.playArea))
+            if(random.NextDouble() <= probPerSegment && segments.ElementAt(i).canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, LayoutCreator.playArea))
             {
                 Door door = gameObject.AddComponent<Door>();
                 door.setupDoor(segments.ElementAt(i), this);
@@ -102,6 +102,7 @@ public class Node : MonoBehaviour
                                                             6, 2, 5,
                                                             5, 2, 3,
                                                             3, 4, 5};
+
                     verticesList.Add(vertices);
                     trianglesList.Add(triangles);
                 }
@@ -134,46 +135,15 @@ public class Node : MonoBehaviour
         {
             combinedTriangles.AddRange(trianglesList[i].Select(x => x + combinedVertices.Count));
             combinedVertices.AddRange(verticesList[i]);
+            List<Vector3> verticesInverted = verticesList[i].ToList();
+            verticesInverted.Reverse();
+            combinedTriangles.AddRange(trianglesList[i].Select(x => x + combinedVertices.Count));
+            combinedVertices.AddRange(verticesInverted.ToArray());
         }
         mesh.vertices = combinedVertices.ToArray();
         mesh.triangles = combinedTriangles.ToArray();
 
-        /*mesh.vertices = mesh.vertices.Concat(mesh.vertices).ToArray();
-        int[] trianglesCopy = mesh.triangles;
-        for(int i=0; i<trianglesCopy.Length; i+=3)
-        {
-            int t = trianglesCopy[i];
-            trianglesCopy[i] = trianglesCopy[i + 2];
-            trianglesCopy[i + 2] = t;
-        }
-        mesh.triangles.Concat(trianglesCopy);
-        mesh.RecalculateNormals();
-        for(int i = mesh.normals.Length / 2; i < mesh.normals.Length; i++)
-        {
-            mesh.normals[i] = mesh.normals[i] * -1;
-        }*/ //TODO try to have doubled mesh with one inverted and one not inverted to see walls also from outside
-        meshFilter.mesh = invertMesh(mesh);
-    }
-
-    private Mesh invertMesh(Mesh mesh)
-    {
-        Vector3[] normals = mesh.normals;
-        for (int i = 0; i < normals.Length; i++)
-        {
-            normals[i] = -normals[i];
-        }
-        mesh.normals = normals;
-
-        int[] triangles = mesh.triangles;
-        for (int i = 0; i < triangles.Length; i += 3)
-        {
-            int t = triangles[i];
-            triangles[i] = triangles[i + 2];
-            triangles[i + 2] = t;
-        }
-
-        mesh.triangles = triangles;
-        return mesh;
+        meshFilter.mesh = mesh;
     }
 
     // Start is called before the first frame update
@@ -190,8 +160,11 @@ public class Node : MonoBehaviour
             firstShown = true;
             foreach(Door door in doors)
             {
-                Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-                door.nextNode = LayoutCreator.createRandomRoom(door.getPoint1() + p2ToP1 / 2, new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, options);
+                if(door.nextNode == null)
+                {
+                    Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
+                    door.nextNode = LayoutCreator.createRandomRoom(door.getPoint1() + p2ToP1 / 2, new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, options);
+                }
             }
         }
     }

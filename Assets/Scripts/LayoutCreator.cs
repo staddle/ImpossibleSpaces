@@ -12,6 +12,7 @@ public class LayoutCreator : MonoBehaviour
     public bool testRoom = false;
     public List<Vector2> testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
     public Node currentRoom;
+    static Dictionary<Node, RoomDebug> roomDebugs = new Dictionary<Node, RoomDebug>();
 
     // Start is called before the first frame update
     void Start()
@@ -57,47 +58,54 @@ public class LayoutCreator : MonoBehaviour
     {
         //roomSegments.Clear();
         //connectPoints(sampledPoints);
+        if (roomDebugs.TryGetValue(currentRoom, out RoomDebug roomDebug))
+        { 
+            createRandomRoomInternal(roomDebug.currentGeneralLayoutRooms, null, roomGeneratorOptions);
+        }
     }
 
     private void OnDrawGizmos()
     {
-        /*if (roomGeneratorOptions == null)
+        if (roomGeneratorOptions == null)
             return;
-        if (roomGeneratorOptions.showGeneralLayoutRooms)
+        if (roomDebugs.TryGetValue(currentRoom, out RoomDebug roomDebug))
         {
-            Gizmos.color = Color.blue;
-            foreach (GeneralLayoutRoom room in generalLayoutRooms)
+            if (roomGeneratorOptions.showGeneralLayoutRooms)
             {
-                drawGeneralLayoutRoom(room);
-            }
-        }
-        if(roomGeneratorOptions.showBigRoom && bigRoom != null)
-        {
-            Gizmos.color = Color.red;
-            drawGeneralLayoutRoom(bigRoom, roomGeneratorOptions.showVertexNumbers);
-        }
-        if (roomGeneratorOptions.showSamplePoints && sampledPoints.Count > 0) 
-        { 
-            for(int i=0; i<sampledPoints.Count; i++)
-            {
-                Vector3 point = Vector2At(sampledPoints.ElementAt(i), 0);
-                Gizmos.color = Color.red;
-                Gizmos.DrawSphere(point, 0.05f);
-                if(roomGeneratorOptions.showSamplePointNumbers)
+                Gizmos.color = Color.blue;
+                foreach (GeneralLayoutRoom room in roomDebug.currentGeneralLayoutRooms)
                 {
-                    DrawString(i.ToString(), point);
+                    drawGeneralLayoutRoom(room);
+                }
+            }
+            if(roomGeneratorOptions.showBigRoom && roomDebug.currentBigRoom != null)
+            {
+                Gizmos.color = Color.red;
+                drawGeneralLayoutRoom(roomDebug.currentBigRoom, roomGeneratorOptions.showVertexNumbers);
+            }
+            if (roomGeneratorOptions.showSamplePoints && roomDebug.currentSampledPoints.Count > 0) 
+            { 
+                for(int i=0; i< roomDebug.currentSampledPoints.Count; i++)
+                {
+                    Vector3 point = Vector2At(roomDebug.currentSampledPoints.ElementAt(i), 0);
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawSphere(point, 0.05f);
+                    if(roomGeneratorOptions.showSamplePointNumbers)
+                    {
+                        DrawString(i.ToString(), point);
+                    }
+                }
+            }
+            if(roomGeneratorOptions.showFinishedRoom)
+            {
+                Gizmos.color = Color.black;
+                List<BezierRoomSegment> filteredSegments = currentRoom.segments.ToList().Where(x => x.GetType() == typeof(BezierRoomSegment)).Select(x => (BezierRoomSegment)x).ToList();
+                foreach(BezierRoomSegment segment in filteredSegments)
+                {
+                    segment.drawGizmos(roomGeneratorOptions.bezierSubdivisions, roomGeneratorOptions.showBezierTangents);
                 }
             }
         }
-        if(roomGeneratorOptions.showFinishedRoom)
-        {
-            Gizmos.color = Color.black;
-            List<BezierRoomSegment> filteredSegments = roomSegments.ToList().Where(x => x.GetType() == typeof(BezierRoomSegment)).Select(x => (BezierRoomSegment)x).ToList();
-            foreach(BezierRoomSegment segment in filteredSegments)
-            {
-                segment.drawGizmos(roomGeneratorOptions.bezierSubdivisions, roomGeneratorOptions.showBezierTangents);
-            }
-        }*/
     }
 
     private void buildPlayArea(Vector2 playArea, float wallHeight)
@@ -113,7 +121,7 @@ public class LayoutCreator : MonoBehaviour
         foreach (var wall in walls)
         {
             wall.transform.parent = parentObject.transform;
-            wall.transform.localScale = new Vector3(1, 1, wallHeight / 10);
+            wall.transform.localScale = new Vector3(1.005f, 1, wallHeight / 10);
         }
 
         //build play area a bit bigger to stop z-fighting of room and play area
@@ -178,7 +186,12 @@ public class LayoutCreator : MonoBehaviour
             generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options, testVertices));
         }
 
+        return createRandomRoomInternal(generalLayoutRooms, previousRoom, options);
+    }
 
+    // to debug creation of bigRoom
+    private static Node createRandomRoomInternal(LinkedList<GeneralLayoutRoom> generalLayoutRooms, Node previousRoom, RoomGeneratorOptions options)
+    {
         // create one big room from generalLayoutRooms
         GeneralLayoutRoom bigRoom = createBigRoom(generalLayoutRooms);
 
@@ -194,7 +207,7 @@ public class LayoutCreator : MonoBehaviour
 
         Node room = roomGameObject.AddComponent<Node>();
         room.setupNode(roomSegments, previousRoom, options);
-
+        roomDebugs.Add(room, new RoomDebug(generalLayoutRooms, bigRoom, sampledPoints));
 
         // generate doors
         room.generateDoors();
@@ -323,6 +336,16 @@ public class LayoutCreator : MonoBehaviour
         {
             GeneralLayoutRoom room = generalLayoutRooms.ElementAt(roomIndex);
             int iAdjusted = (i + startWith) % room.numberOfEdges;
+            Vector2 newVertex = room.vertices[iAdjusted];
+            bool skip = false;
+            foreach(Vector2 v in bigRoomVertices)
+            {
+                skip = skip || v == newVertex;
+            }
+            if(skip)
+            {
+                continue;
+            }
             bigRoomVertices.Add(room.vertices[iAdjusted]);
             if (roomIndex + 1 < generalLayoutRooms.Count)
             {
@@ -330,13 +353,8 @@ public class LayoutCreator : MonoBehaviour
 
                 if (room.isOnSpecificEdge(nextRoom.vertices[0], iAdjusted) || room.isOnSpecificEdge(nextRoom.vertices[1], iAdjusted))
                 {
-                    //if ((nextRoom.vertices[1] - room.vertices[iAdjusted+1]).magnitude >  )
-
-
-                    //int nextStartWith = room.isOnEdge(nextRoom.vertices[0]) & !room.isOnEdge(nextRoom.vertices[1]) ? 1 : 0;
-                    int nextStartWith = 1;
                     // if point 0 or 4 of next room is between last added point and next-to-add point, add next room first
-                    bigRoomVertices = createBigRoomRec(roomIndex + 1, bigRoomVertices, generalLayoutRooms, nextStartWith);
+                    bigRoomVertices = createBigRoomRec(roomIndex + 1, bigRoomVertices, generalLayoutRooms, 1);
                 }
             }
         }
@@ -593,4 +611,17 @@ public class LayoutCreator : MonoBehaviour
         UnityEditor.Handles.EndGUI();
     }
 
+    public struct RoomDebug
+    {
+        public LinkedList<GeneralLayoutRoom> currentGeneralLayoutRooms;
+        public GeneralLayoutRoom currentBigRoom;
+        public LinkedList<Vector2> currentSampledPoints;
+
+        public RoomDebug(LinkedList<GeneralLayoutRoom> currentGeneralLayoutRooms, GeneralLayoutRoom currentBigRoom, LinkedList<Vector2> currentSampledPoints)
+        {
+            this.currentGeneralLayoutRooms = currentGeneralLayoutRooms;
+            this.currentBigRoom = currentBigRoom;
+            this.currentSampledPoints = currentSampledPoints;
+        }
+    }
 }

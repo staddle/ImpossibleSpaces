@@ -18,7 +18,7 @@ public class RoomSegment
         Debug.LogError("not implemented");
     }
 
-    public virtual bool canContainDoor(float doorWidth, GeneralLayoutRoom playArea)
+    public virtual bool canContainDoor(float doorWidth, float lengthInRhythmDirectionWherePlayAreaCannotEnd, GeneralLayoutRoom playArea)
     {
         return false;
     }

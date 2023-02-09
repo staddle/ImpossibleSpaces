@@ -1,13 +1,13 @@
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 
 [CustomEditor(typeof(LayoutCreator))]
 public class LayoutCreatorEditor : Editor
 {
     LayoutCreator layoutCreator;
+    bool segmentsFoldOut = false;
 
     public static GUIStyle buttonStyle()
     {
@@ -57,10 +57,32 @@ public class LayoutCreatorEditor : Editor
                     {
                         using(new EditorGUILayout.HorizontalScope())
                         {
-                            EditorGUILayout.LabelField("Vertex " + i);
+                            /*EditorGUILayout.LabelField("Vertex " + i);
                             float x = FloatField("X", layoutCreator.testRoomVertices[i].x);
                             float y = FloatField("Y", layoutCreator.testRoomVertices[i].y);
                             layoutCreator.testRoomVertices[i] = new(x, y);
+                            */
+                            layoutCreator.testRoomVertices[i] = EditorGUILayout.Vector2Field("Vertex " + i, layoutCreator.testRoomVertices[i]);
+                        }
+                    }
+                }
+            }
+            if(layoutCreator.currentRoom != null)
+            {
+                segmentsFoldOut = EditorGUILayout.Foldout(segmentsFoldOut, "RoomSegments");
+                if(segmentsFoldOut)
+                {
+                    LinkedList<RoomSegment> segments = layoutCreator.currentRoom.segments;
+                    for (int i = 0; i < segments.Count; i++)
+                    {
+                        using (new GUILayout.VerticalScope())
+                        {
+                            EditorGUILayout.LabelField("Segment " + i);
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.Vector2Field("Start: ", segments.ElementAt(i).startPoint);
+                                EditorGUILayout.Vector2Field("End: ", segments.ElementAt(i).endPoint);
+                            }
                         }
                     }
                 }
