@@ -23,6 +23,17 @@ public class RoomSegment
         return false;
     }
 
+    public virtual Vector2 getRandomDoorLocation(RoomGeneratorOptions options)
+    {
+        return new();
+    }
+
+    public Vector2 getOutwardDirection()
+    {
+        Vector2 start2End = endPoint - startPoint;
+        return new Vector2(start2End.y, -start2End.x).normalized;
+    }
+
     protected Vector3 Vector2At(Vector2 v2, float y)
     {
         return LayoutCreator.Vector2At(v2, y);

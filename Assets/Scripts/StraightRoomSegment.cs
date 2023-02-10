@@ -18,6 +18,15 @@ public class StraightRoomSegment : RoomSegment
         return isEnoughSpace && isEnoughWidth;
     }
 
+    public override Vector2 getRandomDoorLocation(RoomGeneratorOptions options)
+    {
+        System.Random random = new System.Random();
+        Vector2 doorDirection = this.endPoint - this.startPoint;
+        double doorStart = random.NextDouble() * (Math.Abs(doorDirection.magnitude) - options.doorWidth);
+        doorDirection.Normalize();
+        return startPoint + doorDirection * (float)doorStart;
+    }
+
     private bool isOnPlayAreaEdge(GeneralLayoutRoom playArea)
     {
         return playArea.isOnEdge(startPoint) && playArea.isOnEdge(endPoint);
@@ -25,8 +34,7 @@ public class StraightRoomSegment : RoomSegment
 
     private bool isEnoughSpaceForAnotherRoom(GeneralLayoutRoom playArea, float lengthInRhythmDirectionWherePlayAreaCannotEnd)
     {
-        Vector2 start2End = endPoint - startPoint;
-        Vector2 outDirection = new Vector2(start2End.y, -start2End.x).normalized;
+        Vector2 outDirection = getOutwardDirection();
         return playArea.isInside(startPoint + outDirection * lengthInRhythmDirectionWherePlayAreaCannotEnd) &&
             playArea.isInside(endPoint + outDirection * lengthInRhythmDirectionWherePlayAreaCannotEnd);
     }

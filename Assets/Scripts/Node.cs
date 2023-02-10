@@ -13,7 +13,7 @@ public class Node : MonoBehaviour
     System.Random random = new System.Random();
     bool firstShown = false;
 
-    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, RoomGeneratorOptions options)
+    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomGeneratorOptions options)
     {
         this.segments = segments;
         this.options = options;
@@ -22,7 +22,7 @@ public class Node : MonoBehaviour
         if(previousNode != null && options.backDoorToPreviousRoom)
         {
             Door door = gameObject.AddComponent<Door>();
-            door.setupDoor(segments.First.Value, this);
+            door.setupDoor(segments.First.Value, this, previousDoor.position);
             door.nextNode = previousNode;
             door.transform.parent = transform;
             doors.Add(door);
@@ -38,12 +38,13 @@ public class Node : MonoBehaviour
         {
             if (doors.Count == numberOfDoors)
                 break;
-            if(random.NextDouble() <= probPerSegment && segments.ElementAt(i).canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, LayoutCreator.playArea))
+            RoomSegment segment = segments.ElementAt(i);
+            if(random.NextDouble() <= probPerSegment && segment.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, LayoutCreator.playArea))
             {
                 Door door = gameObject.AddComponent<Door>();
-                door.setupDoor(segments.ElementAt(i), this);
-                door.transform.parent = transform;
 
+                door.setupDoor(segment, this, LayoutCreator.Vector2At(segment.getRandomDoorLocation(options), 0));
+                door.transform.parent = transform;
                 doors.Add(door);
             }
         }
@@ -73,7 +74,7 @@ public class Node : MonoBehaviour
             {
                 StraightRoomSegment straight = (StraightRoomSegment)segment;
                 List<Door> doorOnSegment = doors.Where(x => x.roomSegment == segment).ToList();
-                if (doorOnSegment.Count == 1)
+                if (doorOnSegment.Count == 1) //TODO what if two or more doors on one segment?
                 {
                     /*
                      * 1-----2
@@ -86,11 +87,10 @@ public class Node : MonoBehaviour
                     vertices[1] = vertices[0] + Vector3.up * wallHeight;
                     vertices[3] = new Vector3(straight.endPoint.x, 0, straight.endPoint.y);
                     vertices[2] = vertices[3] + Vector3.up * wallHeight;
-                    double doorStart = random.NextDouble() * (Math.Abs(Vector3.Distance(vertices[3], vertices[0])) - options.doorWidth);
-                    Vector3 doorDirection = vertices[3] - vertices[0];
-                    doorDirection.Normalize();
-                    vertices[7] = vertices[0] + doorDirection * (float)doorStart;
-                    vertices[4] = vertices[7] + doorDirection * options.doorWidth;
+                    Vector3 doorDirection = (vertices[3] - vertices[0]).normalized;
+                    Vector3 doorMiddlePoint = doorOnSegment[0].position;
+                    vertices[7] = doorMiddlePoint - doorDirection * options.doorWidth / 2;
+                    vertices[4] = doorMiddlePoint + doorDirection * options.doorWidth / 2;
                     vertices[5] = vertices[4] + Vector3.up * options.doorHeight;
                     vertices[6] = vertices[7] + Vector3.up * options.doorHeight;
                     doorOnSegment[0].point1 = vertices[7];
@@ -163,7 +163,7 @@ public class Node : MonoBehaviour
                 if(door.nextNode == null)
                 {
                     Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-                    door.nextNode = LayoutCreator.createRandomRoom(door.getPoint1() + p2ToP1 / 2, new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, options);
+                    door.nextNode = LayoutCreator.createRandomRoom(door.getPoint1() + p2ToP1 / 2, new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, door, options);
                 }
             }
         }

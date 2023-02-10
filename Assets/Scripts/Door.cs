@@ -2,15 +2,22 @@ using UnityEngine;
 
 public class Door : MonoBehaviour
 {
+    public Vector3 position;
     public Vector3 point1, point2;
     public RoomSegment roomSegment;
     public Node previousNode;
     public Node nextNode;
 
-    public void setupDoor(RoomSegment segment, Node prev)
+    public void setupDoor(RoomSegment segment, Node prev, Vector3 position)
     {
         roomSegment = segment;
         previousNode = prev;
+        this.position = position;
+    }
+
+    public Vector2 getPosition()
+    {
+        return new(position.x, position.z);
     }
 
     public Vector2 getPoint1()

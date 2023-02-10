@@ -23,7 +23,7 @@ public class LayoutCreator : MonoBehaviour
 
         buildPlayArea(roomGeneratorOptions.playArea, roomGeneratorOptions.playAreaWallHeight);
         setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
-        currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, roomGeneratorOptions, testRoom ? testRoomVertices : null);
+        currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, roomGeneratorOptions, testRoom ? testRoomVertices : null);
         currentRoom.gameObject.SetActive(true);
     }
 
@@ -42,7 +42,7 @@ public class LayoutCreator : MonoBehaviour
             {
                 Destroy(roomsParent.transform.GetChild(i).gameObject);
             }
-            currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, gameObject.GetComponent<RoomGeneratorOptions>(), testRoom ? testRoomVertices : null);
+            currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, gameObject.GetComponent<RoomGeneratorOptions>(), testRoom ? testRoomVertices : null);
             currentRoom.gameObject.SetActive(true);
         }
     }
@@ -60,7 +60,7 @@ public class LayoutCreator : MonoBehaviour
         //connectPoints(sampledPoints);
         if (roomDebugs.TryGetValue(currentRoom, out RoomDebug roomDebug))
         { 
-            createRandomRoomInternal(roomDebug.currentGeneralLayoutRooms, null, roomGeneratorOptions);
+            createRandomRoomInternal(roomDebug.currentGeneralLayoutRooms, null, null, roomGeneratorOptions);
         }
     }
 
@@ -145,7 +145,7 @@ public class LayoutCreator : MonoBehaviour
         Camera.main.transform.Translate(startPosition);
     }
 
-    public static Node createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, Node previousRoom, RoomGeneratorOptions options, List<Vector2> testVertices = null)
+    public static Node createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, Node previousRoom, Door previousDoor, RoomGeneratorOptions options, List<Vector2> testVertices = null)
     {
         /* Steps:
             0. Have Starting Point
@@ -167,7 +167,7 @@ public class LayoutCreator : MonoBehaviour
             {
                 if (i < options.minimumRoomSize || random.NextDouble() < Math.Pow(options.probabilityOfNextRoom * options.probabilityMultiplierPerNextRoom, i - options.minimumRoomSize))
                 {
-                    if (createNextRandomGeneralLayoutRoom(prevRoom, options, out prevRoom, testVertices))
+                    if (createNextRandomGeneralLayoutRoom(prevRoom, previousDoor, options, out prevRoom, testVertices))
                     {
                         generalLayoutRooms.AddLast(prevRoom);
                     } else
@@ -186,11 +186,11 @@ public class LayoutCreator : MonoBehaviour
             generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options, testVertices));
         }
 
-        return createRandomRoomInternal(generalLayoutRooms, previousRoom, options);
+        return createRandomRoomInternal(generalLayoutRooms, previousRoom, previousDoor, options);
     }
 
     // to debug creation of bigRoom
-    private static Node createRandomRoomInternal(LinkedList<GeneralLayoutRoom> generalLayoutRooms, Node previousRoom, RoomGeneratorOptions options)
+    private static Node createRandomRoomInternal(LinkedList<GeneralLayoutRoom> generalLayoutRooms, Node previousRoom, Door previousDoor, RoomGeneratorOptions options)
     {
         // create one big room from generalLayoutRooms
         GeneralLayoutRoom bigRoom = createBigRoom(generalLayoutRooms);
@@ -206,7 +206,7 @@ public class LayoutCreator : MonoBehaviour
         roomGameObject.SetActive(false);
 
         Node room = roomGameObject.AddComponent<Node>();
-        room.setupNode(roomSegments, previousRoom, options);
+        room.setupNode(roomSegments, previousRoom, previousDoor, options);
         roomDebugs.Add(room, new RoomDebug(generalLayoutRooms, bigRoom, sampledPoints));
 
         // generate doors
@@ -361,10 +361,10 @@ public class LayoutCreator : MonoBehaviour
         return bigRoomVertices;
     }
 
-    private static bool createNextRandomGeneralLayoutRoom(GeneralLayoutRoom previousRoom, RoomGeneratorOptions options, 
+    private static bool createNextRandomGeneralLayoutRoom(GeneralLayoutRoom previousRoom, Door previousDoor, RoomGeneratorOptions options, 
         out GeneralLayoutRoom nextRoom, List<Vector2> testRoomVertices = null)
     {
-        (Vector2 nextStartingPoint, Vector2 nextRhythmDirection) = getPointOnRoomEdge(previousRoom);
+        (Vector2 nextStartingPoint, Vector2 nextRhythmDirection) = getPointOnRoomEdge(previousRoom, previousDoor == null ? null : previousDoor.getPosition());
         nextRoom = null;
 
         bool maxIterationsExceeded = true;
@@ -372,7 +372,7 @@ public class LayoutCreator : MonoBehaviour
         {
             if (!playArea.isInside(nextStartingPoint) || !playArea.isInside(nextRhythmDirection.normalized * options.lengthInRhythmDirectionWherePlayAreaCannotEnd))
             {
-                (nextStartingPoint, nextRhythmDirection) = getPointOnRoomEdge(previousRoom);
+                (nextStartingPoint, nextRhythmDirection) = getPointOnRoomEdge(previousRoom, previousDoor == null ? null : previousDoor.getPosition());
             }
             else
             {
@@ -390,17 +390,26 @@ public class LayoutCreator : MonoBehaviour
         return true;
     }
 
+
     /// <summary>
     /// Returns a random point on a random edge of the given room and a vector perpendicular to the edge
     /// </summary>
     /// <param name="room"></param>
     /// <returns></returns>
-    private static (Vector2, Vector2) getPointOnRoomEdge(GeneralLayoutRoom room)
+    private static (Vector2, Vector2) getPointOnRoomEdge(GeneralLayoutRoom room, Vector2? except = null)
     {
         System.Random random = new System.Random();
-        int index = random.Next(0, room.numberOfEdges-1);
-        Vector2 direction = room.vertices[(index + 1) % room.numberOfEdges] - room.vertices[index];
-        Vector2 pointOnEdge = room.vertices[index] + (float)random.NextDouble() * direction;
+        int index = random.Next(0, room.numberOfEdges - 1);
+        Vector2 point1 = room.vertices[index], point2 = room.vertices[(index + 1) % room.numberOfEdges];
+        Vector2 pointOnEdge, direction;
+        if (except != null && GeneralLayoutRoom.isPointOnLine(except ?? Vector2.zero, point1, point2))
+        {
+            index = (index + random.Next(1, room.numberOfEdges - 1)) % room.numberOfEdges;
+            point1 = room.vertices[index];
+            point2 = room.vertices[(index + 1) % room.numberOfEdges];
+        }
+        direction = point2 - point1;
+        pointOnEdge = point1 + (float)random.NextDouble() * direction;
         return (pointOnEdge, new(direction.y, -direction.x));
     }
 
