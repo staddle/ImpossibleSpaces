@@ -20,9 +20,10 @@ public class StraightRoomSegment : RoomSegment
 
     public override Vector2 getRandomDoorLocation(RoomGeneratorOptions options)
     {
-        System.Random random = new System.Random();
-        Vector2 doorDirection = this.endPoint - this.startPoint;
-        double doorStart = random.NextDouble() * (Math.Abs(doorDirection.magnitude) - options.doorWidth);
+        System.Random random = new();
+        Vector2 doorDirection = endPoint - startPoint;
+        float doorStart = (float)random.NextDouble() * (Math.Abs(doorDirection.magnitude) - options.doorWidth);
+        doorStart += options.doorWidth / 2; // add half door width to make middle point (position point) instead of start point
         doorDirection.Normalize();
         return startPoint + doorDirection * (float)doorStart;
     }

@@ -153,13 +153,14 @@ public class LayoutCreator : MonoBehaviour
             2. Sample points along general layout with random offsets
             3. Connect points via different connector patterns
             4. Draw mesh    */
-        System.Random random = new System.Random();
+        System.Random random = new();
 
         // first room from starting point
         LinkedList<GeneralLayoutRoom> generalLayoutRooms = new LinkedList<GeneralLayoutRoom>();
         if(testVertices == null)
         {
-            GeneralLayoutRoom prevRoom = createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options, testVertices);
+            float minimumWidth = options.doorWidth; //first room wall (with door back) should at least contain the door -> be broad enough to fit th edoor
+            GeneralLayoutRoom prevRoom = createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, minimumWidth, options, testVertices);
             generalLayoutRooms.AddLast(prevRoom);
 
             // create next room(s) with starting point on previous room's edge but inside playarea
@@ -183,7 +184,7 @@ public class LayoutCreator : MonoBehaviour
         }
         else
         {
-            generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, options, testVertices));
+            generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, 0, options, testVertices));
         }
 
         return createRandomRoomInternal(generalLayoutRooms, previousRoom, previousDoor, options);
@@ -386,7 +387,7 @@ public class LayoutCreator : MonoBehaviour
             return false;
         }
 
-        nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, options, testRoomVertices);
+        nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, 0, options, testRoomVertices);
         return true;
     }
 
@@ -428,7 +429,7 @@ public class LayoutCreator : MonoBehaviour
         return new Vector3(v2.x, y, v2.y);
     }
 
-    private static GeneralLayoutRoom createRandomGeneralLayoutRoom(Vector2 startingPoint, Vector2 rhythmDirection, RoomGeneratorOptions options, List<Vector2> testRoomVertices = null)
+    private static GeneralLayoutRoom createRandomGeneralLayoutRoom(Vector2 startingPoint, Vector2 rhythmDirection, float minimumWidth, RoomGeneratorOptions options, List<Vector2> testRoomVertices = null)
     {
         System.Random random = new System.Random();
         Vector2 point1, point2, point3, point4, rhythmDirectionPerpendicular;
@@ -436,18 +437,27 @@ public class LayoutCreator : MonoBehaviour
         if (testRoomVertices == null)
         {
             float sign = (random.Next(0, 1) - 0.5f) * 2;
-            float width = randomFloat(options.minimumGeneralLayoutWidth, options.maximumGeneralLayoutRoomSize);
+            // width in one direction at least minimumWidth / 2 (for door) but if minimumGeneralLayoutWidth (minus other side of the door) is bigger, then it should be at least that
+            float minWidth1 = (options.minimumGeneralLayoutWidth - minimumWidth / 2) < minimumWidth / 2 ? (options.minimumGeneralLayoutWidth - minimumWidth / 2) : minimumWidth / 2; 
+            float width1 = randomFloat(minWidth1, options.maximumGeneralLayoutRoomSize); //TODO: Can room be bigger than maximumGeneralLayoutRoomSize with this approach?
+
+            float minWidth2 = minimumWidth / 2;
+            if (width1 < (options.minimumGeneralLayoutWidth - minimumWidth / 2))
+            {
+                float atLeast = options.minimumGeneralLayoutWidth - width1;
+                minWidth2 = atLeast < minWidth2 ? minWidth2 : atLeast;
+            }
+            float width2 = randomFloat(minWidth2, options.maximumGeneralLayoutRoomSize);
             depth = randomFloat(options.minimumGeneralLayoutWidth, options.maximumGeneralLayoutRoomSize);
-            float distribution = randomFloat(0, 1); //how much of width lies on left side of entrance compared to right side of entrance
             rhythmDirection.Normalize();
 
             rhythmDirectionPerpendicular = new(sign * rhythmDirection.y, -sign * rhythmDirection.x);
 
             // Start from startingPoint and extrude in any direction perpendicular to rhythmDirection
-            point1 = startingPoint + rhythmDirectionPerpendicular * width * distribution;
+            point1 = startingPoint + rhythmDirectionPerpendicular.normalized * width1;
 
             // Second point is extruded in other direction of first point (so door lays somewhere in between those two points and then some distance back to give room area
-            point2 = startingPoint + new Vector2(-rhythmDirectionPerpendicular.x, -rhythmDirectionPerpendicular.y) * (width - width * distribution);
+            point2 = startingPoint + new Vector2(-rhythmDirectionPerpendicular.x, -rhythmDirectionPerpendicular.y).normalized * width2;
         }
         else
         {

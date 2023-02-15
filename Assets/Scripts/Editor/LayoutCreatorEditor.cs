@@ -7,7 +7,7 @@ using UnityEngine;
 public class LayoutCreatorEditor : Editor
 {
     LayoutCreator layoutCreator;
-    bool segmentsFoldOut = false;
+    bool segmentsFoldOut = false, doorsFoldOut = false;
 
     public static GUIStyle buttonStyle()
     {
@@ -82,6 +82,22 @@ public class LayoutCreatorEditor : Editor
                             {
                                 EditorGUILayout.Vector2Field("Start: ", segments.ElementAt(i).startPoint);
                                 EditorGUILayout.Vector2Field("End: ", segments.ElementAt(i).endPoint);
+                            }
+                        }
+                    }
+                }
+                doorsFoldOut = EditorGUILayout.Foldout(doorsFoldOut, "Doors");
+                if (doorsFoldOut)
+                {
+                    List<Door> doors = layoutCreator.currentRoom.doors;
+                    for (int i = 0; i < doors.Count; i++)
+                    {
+                        using (new GUILayout.VerticalScope())
+                        {
+                            EditorGUILayout.LabelField("Door " + i);
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.Vector2Field("Position: ", new(doors[i].position.x, doors[i].position.z));
                             }
                         }
                     }

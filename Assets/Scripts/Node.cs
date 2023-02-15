@@ -32,21 +32,23 @@ public class Node : MonoBehaviour
     public void generateDoors()
     {
         int numberOfDoors = random.Next(options.minNumberOfDoorsPerRoom, options.maxNumberOfDoorsPerRoom);
-        double probPerSegment = (double)numberOfDoors / (double)segments.Count;
 
-        for(int i=0; i<segments.Count; i++)
+        List<RoomSegment> segmentsThatAllowDoors = segments.Where(s => 
+            s.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, LayoutCreator.playArea) &&
+            doors.Where(x => x.roomSegment == s).Count() == 0).ToList(); //disallow multiple doors per segment (TODO)
+        if(segmentsThatAllowDoors.Count == 0)
         {
-            if (doors.Count == numberOfDoors)
-                break;
-            RoomSegment segment = segments.ElementAt(i);
-            if(random.NextDouble() <= probPerSegment && segment.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, LayoutCreator.playArea))
-            {
-                Door door = gameObject.AddComponent<Door>();
-
-                door.setupDoor(segment, this, LayoutCreator.Vector2At(segment.getRandomDoorLocation(options), 0));
-                door.transform.parent = transform;
-                doors.Add(door);
-            }
+            Debug.LogError("No segments that allow doors found!");
+            return;
+        }
+        for(int i=0; i < (numberOfDoors>segmentsThatAllowDoors.Count ? segmentsThatAllowDoors.Count : numberOfDoors); i++)
+        {
+            RoomSegment segment = segmentsThatAllowDoors[random.Next(0, segmentsThatAllowDoors.Count)];
+            segmentsThatAllowDoors.Remove(segment); //same segment can't have another door
+            Door door = gameObject.AddComponent<Door>();
+            door.setupDoor(segment, this, LayoutCreator.Vector2At(segment.getRandomDoorLocation(options), 0));
+            door.transform.parent = transform;
+            doors.Add(door);
         }
     }
 
@@ -163,7 +165,7 @@ public class Node : MonoBehaviour
                 if(door.nextNode == null)
                 {
                     Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-                    door.nextNode = LayoutCreator.createRandomRoom(door.getPoint1() + p2ToP1 / 2, new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, door, options);
+                    door.nextNode = LayoutCreator.createRandomRoom(new(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, door, options);
                 }
             }
         }
