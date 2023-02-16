@@ -9,12 +9,21 @@ public class Door : MonoBehaviour
     public RoomSegment roomSegment;
     public Node previousNode;
     public Node nextNode;
+    public delegate void OnCollisionEnterDel(Collider collider, Door door);
 
-    public void setupDoor(RoomSegment segment, Node prev, Vector3 position)
+    private BoxCollider doorCollider;
+    private OnCollisionEnterDel onCollisionEnter;
+    private float doorHeight, doorArea;
+ 
+
+    public void setupDoor(RoomSegment segment, Node prev, Vector3 position, float doorHeight, float doorArea, OnCollisionEnterDel callback)
     {
         roomSegment = segment;
         previousNode = prev;
         this.position = position;
+        onCollisionEnter = callback;
+        this.doorArea = doorArea;
+        this.doorHeight = doorHeight;
     }
 
     public Vector2 getPosition()
@@ -32,6 +41,12 @@ public class Door : MonoBehaviour
         return new(point2.x, point2.z);
     }
 
+    private void OnTriggerEnter(Collider collider)
+    {
+        Debug.Log("Collision detected on " + gameObject.name + " with " + collider.gameObject.name);
+        onCollisionEnter(collider, this);
+    }
+
     public bool isInsideDoorArea(Vector3 point, float doorArea)
     {
         Vector2 p1 = getPoint1();
@@ -45,7 +60,20 @@ public class Door : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        // add collider when Door becomes active (when mesh is already calculated)
+        doorCollider = gameObject.AddComponent<BoxCollider>();
+        doorCollider.isTrigger = true;
+        doorCollider.center = position + Vector3.up * doorHeight / 2;
+        Vector3 size = new Vector3(0, doorHeight, 0);
+        Vector3 p1Top2 = point2 - point1;
+        Vector3 outwards = Vector3.Cross(p1Top2, new(0, 1, 0)).normalized;
+        size += p1Top2;
+        size += outwards * doorArea / 2;
+        for(int i=0; i<3; i++)
+        {
+            if (size[i] < 0f) size[i] *= -1;
+        }
+        doorCollider.size = size;
     }
 
     // Update is called once per frame

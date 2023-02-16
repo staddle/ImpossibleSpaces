@@ -14,39 +14,48 @@ public class LayoutCreator : MonoBehaviour
     public Node currentRoom;
 
     static Dictionary<Node, RoomDebug> roomDebugs = new Dictionary<Node, RoomDebug>();
+    static LayoutCreator instance;
+    bool switchedRoom = false;
 
     // Start is called before the first frame update
     void Start()
     {
         roomGeneratorOptions = gameObject.GetComponent<RoomGeneratorOptions>();
-        playArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, roomGeneratorOptions.playArea.y), 
-            new(roomGeneratorOptions.playArea.x, roomGeneratorOptions.playArea.y), new(roomGeneratorOptions.playArea.x, 0) });;
+        playArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, roomGeneratorOptions.playArea.y),
+            new(roomGeneratorOptions.playArea.x, roomGeneratorOptions.playArea.y), new(roomGeneratorOptions.playArea.x, 0) }); ;
 
         buildPlayArea(roomGeneratorOptions.playArea, roomGeneratorOptions.playAreaWallHeight);
         setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
         currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, roomGeneratorOptions, testRoom ? testRoomVertices : null);
         currentRoom.gameObject.SetActive(true);
+
+        instance = this;
     }
 
     // Update is called once per frame
     void Update()
     {
-        foreach(Door door in currentRoom.doors)
+        /*foreach (Door door in currentRoom.doors)
         {
             if (door.isInsideDoorArea(roomGeneratorOptions.playerTransform.position, roomGeneratorOptions.doorArea))
             {
                 goNextRoom(door);
                 break;
             }
-        }
+        }*/
+    }
+
+    public static LayoutCreator get()
+    {
+        return instance;
     }
 
     public void regenerateLayout()
     {
-        if(playArea != null)
+        if (playArea != null)
         {
             GameObject roomsParent = GameObject.Find("Rooms");
-            for (int i=0; i<roomsParent.transform.childCount; i++)
+            for (int i = 0; i < roomsParent.transform.childCount; i++)
             {
                 Destroy(roomsParent.transform.GetChild(i).gameObject);
             }
@@ -57,9 +66,7 @@ public class LayoutCreator : MonoBehaviour
 
     public void goNextRoom(int doorNumber)
     {
-        currentRoom.gameObject.SetActive(false);
-        currentRoom = currentRoom.doors[doorNumber].nextNode;
-        currentRoom.gameObject.SetActive(true);
+        goNextRoom(currentRoom.doors[doorNumber]);
     }
 
 
@@ -68,7 +75,19 @@ public class LayoutCreator : MonoBehaviour
         currentRoom.gameObject.SetActive(false);
         currentRoom = door.nextNode;
         currentRoom.gameObject.SetActive(true);
+        switchedRoom = door;
     }
+
+    public static void CollidedWithDoor(Collider collider, Door door)
+    {
+        CapsuleCollider player = get().roomGeneratorOptions.playerTransform.gameObject.GetComponent<CapsuleCollider>();
+        if (player != null && collider == player)
+        {
+            if (get().switchedRoom) get().switchedRoom = false;
+            else get().goNextRoom(door);
+        }
+    }
+
     public void redraw()
     {
         //roomSegments.Clear();
@@ -222,7 +241,7 @@ public class LayoutCreator : MonoBehaviour
         roomGameObject.SetActive(false);
 
         Node room = roomGameObject.AddComponent<Node>();
-        room.setupNode(roomSegments, previousRoom, previousDoor, options);
+        room.setupNode(roomSegments, previousRoom, previousDoor, options, CollidedWithDoor);
         roomDebugs.Add(room, new RoomDebug(generalLayoutRooms, bigRoom, sampledPoints));
 
         // generate doors

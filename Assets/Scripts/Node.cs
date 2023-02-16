@@ -12,19 +12,22 @@ public class Node : MonoBehaviour
     Mesh mesh;
     System.Random random = new System.Random();
     bool firstShown = false;
+    Door.OnCollisionEnterDel onCollisionEnter;
 
-    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomGeneratorOptions options)
+    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomGeneratorOptions options, Door.OnCollisionEnterDel callback)
     {
         this.segments = segments;
         this.options = options;
+        onCollisionEnter = callback;
 
         // first room doesn't have a back door
         if(previousNode != null && options.backDoorToPreviousRoom)
         {
-            Door door = gameObject.AddComponent<Door>();
-            door.setupDoor(segments.First.Value, this, previousDoor.position);
+            GameObject doorGO = new GameObject("Door 0");
+            doorGO.transform.parent = transform;
+            Door door = doorGO.AddComponent<Door>();
+            door.setupDoor(segments.First.Value, this, previousDoor.position, options.doorHeight, options.doorArea, onCollisionEnter);
             door.nextNode = previousNode;
-            door.transform.parent = transform;
             doors.Add(door);
         }
     }
@@ -45,9 +48,10 @@ public class Node : MonoBehaviour
         {
             RoomSegment segment = segmentsThatAllowDoors[random.Next(0, segmentsThatAllowDoors.Count)];
             segmentsThatAllowDoors.Remove(segment); //same segment can't have another door
-            Door door = gameObject.AddComponent<Door>();
-            door.setupDoor(segment, this, LayoutCreator.Vector2At(segment.getRandomDoorLocation(options), 0));
-            door.transform.parent = transform;
+            GameObject doorGO = new GameObject("Door "+(i+1));
+            doorGO.transform.parent = transform;
+            Door door = doorGO.AddComponent<Door>();
+            door.setupDoor(segment, this, LayoutCreator.Vector2At(segment.getRandomDoorLocation(options), 0), options.doorHeight, options.doorArea, onCollisionEnter);
             doors.Add(door);
         }
     }
