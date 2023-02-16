@@ -56,6 +56,11 @@ public class RoomGeneratorOptions : MonoBehaviour
     public bool showFinishedRoom = true;
     public bool showBezierTangents = false;
 
+    [Header("Gameplay")]
+    public Transform playerTransform;
+    [Range(0,5f)]
+    public float doorArea = 0.5f;
+
     public Material roomMaterial;
 }
 

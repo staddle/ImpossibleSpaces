@@ -907,8 +907,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9eeed702f86de4043b18a2dea76989e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
-  rotateSpeed: 5
+  moveSpeed: 3
+  rotateSpeed: 3
+  cameraTransform: {fileID: 963194228}
 --- !u!1 &1728657555
 GameObject:
   m_ObjectHideFlags: 0
@@ -1056,6 +1057,8 @@ MonoBehaviour:
   showSamplePointNumbers: 0
   showFinishedRoom: 1
   showBezierTangents: 0
+  playerTransform: {fileID: 1725982594}
+  doorArea: 0.5
   roomMaterial: {fileID: 2100000, guid: 730fef78c605be340ba1205c15db3005, type: 2}
 --- !u!1001 &1934505122
 PrefabInstance:

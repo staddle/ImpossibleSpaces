@@ -12,6 +12,7 @@ public class LayoutCreator : MonoBehaviour
     public bool testRoom = false;
     public List<Vector2> testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
     public Node currentRoom;
+
     static Dictionary<Node, RoomDebug> roomDebugs = new Dictionary<Node, RoomDebug>();
 
     // Start is called before the first frame update
@@ -30,7 +31,14 @@ public class LayoutCreator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        foreach(Door door in currentRoom.doors)
+        {
+            if (door.isInsideDoorArea(roomGeneratorOptions.playerTransform.position, roomGeneratorOptions.doorArea))
+            {
+                goNextRoom(door);
+                break;
+            }
+        }
     }
 
     public void regenerateLayout()
@@ -54,6 +62,13 @@ public class LayoutCreator : MonoBehaviour
         currentRoom.gameObject.SetActive(true);
     }
 
+
+    public void goNextRoom(Door door)
+    {
+        currentRoom.gameObject.SetActive(false);
+        currentRoom = door.nextNode;
+        currentRoom.gameObject.SetActive(true);
+    }
     public void redraw()
     {
         //roomSegments.Clear();
@@ -142,7 +157,7 @@ public class LayoutCreator : MonoBehaviour
 
     private void setUpPlayerPosition(Vector3 startPosition)
     {
-        Camera.main.transform.Translate(startPosition);
+        roomGeneratorOptions.playerTransform.Translate(startPosition);
     }
 
     public static Node createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, Node previousRoom, Door previousDoor, RoomGeneratorOptions options, List<Vector2> testVertices = null)
