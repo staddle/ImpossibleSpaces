@@ -1091,6 +1091,7 @@ MonoBehaviour:
   showBezierTangents: 0
   playerTransform: {fileID: 1725982594}
   doorArea: 0.5
+  renderNextRoomsAlready: 0
   roomMaterial: {fileID: 2100000, guid: 730fef78c605be340ba1205c15db3005, type: 2}
 --- !u!1001 &1934505122
 PrefabInstance:

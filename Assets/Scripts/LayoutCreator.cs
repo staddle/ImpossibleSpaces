@@ -20,6 +20,7 @@ public class LayoutCreator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        instance = this;
         roomGeneratorOptions = gameObject.GetComponent<RoomGeneratorOptions>();
         playArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, roomGeneratorOptions.playArea.y),
             new(roomGeneratorOptions.playArea.x, roomGeneratorOptions.playArea.y), new(roomGeneratorOptions.playArea.x, 0) }); ;
@@ -28,8 +29,7 @@ public class LayoutCreator : MonoBehaviour
         setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
         currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, roomGeneratorOptions, testRoom ? testRoomVertices : null);
         currentRoom.gameObject.SetActive(true);
-
-        instance = this;
+        setFollowingRooms(currentRoom, true);
     }
 
     // Update is called once per frame
@@ -61,6 +61,7 @@ public class LayoutCreator : MonoBehaviour
             }
             currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, gameObject.GetComponent<RoomGeneratorOptions>(), testRoom ? testRoomVertices : null);
             currentRoom.gameObject.SetActive(true);
+            setFollowingRooms(currentRoom, true);
         }
     }
 
@@ -73,14 +74,31 @@ public class LayoutCreator : MonoBehaviour
     public void goNextRoom(Door door)
     {
         currentRoom.gameObject.SetActive(false);
+        setFollowingRooms(currentRoom, false);
         currentRoom = door.nextNode;
         currentRoom.gameObject.SetActive(true);
+        setFollowingRooms(currentRoom, true);
         switchedRoom = door;
+    }
+
+    private void setFollowingRooms(Node room, bool active)
+    {
+        if (!roomGeneratorOptions.renderNextRoomsAlready)
+            return;
+        foreach (Door otherDoor in room.doors)
+        {
+            if(otherDoor.nextNode != null)
+                otherDoor.nextNode.gameObject.SetActive(active);
+        }
     }
 
     public static void CollidedWithDoor(Collider collider, Door door)
     {
-        CapsuleCollider player = get().roomGeneratorOptions.playerTransform.gameObject.GetComponent<CapsuleCollider>();
+        LayoutCreator layoutCreator = get();
+        RoomGeneratorOptions roomGeneratorOptions1 = layoutCreator.roomGeneratorOptions;
+        Transform playerTransform = roomGeneratorOptions1.playerTransform;
+        GameObject playerObject = playerTransform.gameObject;
+        CapsuleCollider player = playerObject.GetComponent<CapsuleCollider>();
         if (player != null && collider == player)
         {
             if (get().switchedRoom) get().switchedRoom = false;

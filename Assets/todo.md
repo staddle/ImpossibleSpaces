@@ -7,3 +7,4 @@
 - Can room be bigger than maximumGeneralLayoutRoomSize (createRandomGeneralLayoutRoom in LayoutCreator)
 - Allow multiple doors per segment?
 - still some rooms cannot generate another door even though enough room is on at least 1 wall (most of the time these rooms are at the edge of the playarea)
+- rooms should have depth (also name?)

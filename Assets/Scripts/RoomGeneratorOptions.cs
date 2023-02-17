@@ -60,6 +60,7 @@ public class RoomGeneratorOptions : MonoBehaviour
     public Transform playerTransform;
     [Range(0,5f)]
     public float doorArea = 0.5f;
+    public bool renderNextRoomsAlready = false;
 
     public Material roomMaterial;
 }
