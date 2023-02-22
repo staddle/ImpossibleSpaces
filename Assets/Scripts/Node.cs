@@ -1,3 +1,4 @@
+using Assets.Scripts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +31,23 @@ public class Node : MonoBehaviour
             door.nextNode = previousNode;
             doors.Add(door);
         }
+    }
+
+    public void sendToShader(List<Vector3> vertices)
+    {
+        MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+        Material material = renderer.material;
+        if(vertices.Count > 0 )
+        {
+            material.SetVectorArray("_RoomVertices", vertices.Select(x => new Vector4(x.x, x.y, x.z, 0)).ToArray());
+        }
+        material.SetInt("_RoomVertexCount", vertices.Count);
+        renderer.material = material;
+    }
+
+    public void setAllDoorsActive(bool active)
+    {
+        doors.ForEach(door => door.gameObject.SetActive(active));
     }
 
     public void generateDoors()
@@ -161,17 +179,27 @@ public class Node : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(!firstShown && gameObject.activeSelf)
+        /*if(!firstShown && gameObject.activeSelf)
         {
             firstShown = true;
-            foreach(Door door in doors)
+            generateNextRooms();
+        }*/
+    }
+
+    public void generateNextRooms()
+    {
+        foreach (Door door in doors)
+        {
+            if (door.nextNode == null)
             {
-                if(door.nextNode == null)
-                {
-                    Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-                    door.nextNode = LayoutCreator.createRandomRoom(new(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, door, options);
-                }
+                Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
+                door.nextNode = LayoutCreator.createRandomRoom(new(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, door, options);
             }
         }
+    }
+
+    public List<Vector3> getVertices()
+    {
+        return segments.Select(s => LayoutCreator.Vector2At(s.startPoint,0)).ToList();
     }
 }

@@ -70,25 +70,34 @@ public class LayoutCreator : MonoBehaviour
         goNextRoom(currentRoom.doors[doorNumber]);
     }
 
-
     public void goNextRoom(Door door)
     {
         currentRoom.gameObject.SetActive(false);
         setFollowingRooms(currentRoom, false);
         currentRoom = door.nextNode;
         currentRoom.gameObject.SetActive(true);
+        currentRoom.sendToShader(new List<Vector3>());
+        currentRoom.setAllDoorsActive(true);
         setFollowingRooms(currentRoom, true);
         switchedRoom = door;
     }
 
     private void setFollowingRooms(Node room, bool active)
     {
+        currentRoom.generateNextRooms();
         if (!roomGeneratorOptions.renderNextRoomsAlready)
             return;
         foreach (Door otherDoor in room.doors)
         {
             if(otherDoor.nextNode != null)
+            {
                 otherDoor.nextNode.gameObject.SetActive(active);
+                if (active)
+                {
+                    otherDoor.nextNode.sendToShader(currentRoom.getVertices());
+                    otherDoor.nextNode.setAllDoorsActive(false);
+                }
+            }
         }
     }
 

@@ -2,6 +2,7 @@ Shader "Custom/InvisibleInsideRoomShader"
 {
     Properties
     {
+        _Color("Color", Color) = (1,0,0,1)
         _MainTex ("Texture", 2D) = "white" {}
         _RoomVertexCount ("Room Vertex Count", Int) = 0
     }
@@ -38,6 +39,7 @@ Shader "Custom/InvisibleInsideRoomShader"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
+            float4 _Color;
 
             v2f vert (float4 vertex : POSITION, float2 uv : TEXCOORD0)
             {
@@ -127,7 +129,7 @@ Shader "Custom/InvisibleInsideRoomShader"
                 }
 
                 // sample the texture
-                fixed4 col = tex2D(_MainTex, input.uv);
+                fixed4 col = tex2D(_MainTex, input.uv) * _Color;
                 // apply fog
                 UNITY_APPLY_FOG(input.fogCoord, col);
                 return col;
