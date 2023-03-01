@@ -12,12 +12,12 @@ public class RoomSegment
         this.startPoint = startPoint;
         this.endPoint = endPoint;
     }
-
+#if UNITY_EDITOR
     public virtual void drawHandles()
     {
         Debug.LogError("not implemented");
     }
-
+#endif
     public virtual bool canContainDoor(float doorWidth, float lengthInRhythmDirectionWherePlayAreaCannotEnd, GeneralLayoutRoom playArea)
     {
         return false;

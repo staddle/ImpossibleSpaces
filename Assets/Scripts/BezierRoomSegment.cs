@@ -12,12 +12,12 @@ public class BezierRoomSegment : RoomSegment
         this.startTangent = startTangent;
         this.endTangent = endTangent;
     }
-
+#if UNITY_EDITOR
     public override void drawHandles()
     {
         Handles.DrawBezier(Vector2At(startPoint, 0), Vector2At(endPoint, 0), Vector2At(startTangent, 0), Vector2At(endTangent, 0), color, null, width);
     }
-
+#endif
     public void drawGizmos(int subdivisions = 10, bool drawTangents = false)
     {
         Gizmos.color = Color.black;

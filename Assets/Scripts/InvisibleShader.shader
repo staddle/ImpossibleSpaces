@@ -19,7 +19,7 @@ Shader "Custom/InvisibleInsideRoomShader"
         {
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
-            Cull Off
+            Cull Back
 
             CGPROGRAM
             #pragma vertex vert

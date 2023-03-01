@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-public class LayoutCreator : MonoBehaviour
+public partial class LayoutCreator : MonoBehaviour
 {
     public static GeneralLayoutRoom playArea;
     public RoomGeneratorOptions roomGeneratorOptions;
@@ -387,7 +387,7 @@ public class LayoutCreator : MonoBehaviour
         return sampledPoints;
     }
 
-    public static GeneralLayoutRoom createBigRoom(LinkedList<GeneralLayoutRoom> generalLayoutRooms)
+    private static GeneralLayoutRoom createBigRoom(LinkedList<GeneralLayoutRoom> generalLayoutRooms)
     {
         return new GeneralLayoutRoom(createBigRoomRec(0, new List<Vector2>(), generalLayoutRooms));
     }
@@ -664,6 +664,7 @@ public class LayoutCreator : MonoBehaviour
 
     public static void DrawString(string text, Vector3 worldPos, Color? textColor = null, Color? backColor = null)
     {
+#if UNITY_EDITOR
         UnityEditor.Handles.BeginGUI();
         var restoreTextColor = GUI.color;
         var restoreBackColor = GUI.backgroundColor;
@@ -689,19 +690,6 @@ public class LayoutCreator : MonoBehaviour
             GUI.backgroundColor = restoreBackColor;
         }
         UnityEditor.Handles.EndGUI();
-    }
-
-    public struct RoomDebug
-    {
-        public LinkedList<GeneralLayoutRoom> currentGeneralLayoutRooms;
-        public GeneralLayoutRoom currentBigRoom;
-        public LinkedList<Vector2> currentSampledPoints;
-
-        public RoomDebug(LinkedList<GeneralLayoutRoom> currentGeneralLayoutRooms, GeneralLayoutRoom currentBigRoom, LinkedList<Vector2> currentSampledPoints)
-        {
-            this.currentGeneralLayoutRooms = currentGeneralLayoutRooms;
-            this.currentBigRoom = currentBigRoom;
-            this.currentSampledPoints = currentSampledPoints;
-        }
+#endif
     }
 }

@@ -12,7 +12,6 @@ public class Node : MonoBehaviour
     MeshFilter meshFilter;
     Mesh mesh;
     System.Random random = new System.Random();
-    bool firstShown = false;
     Door.OnCollisionEnterDel onCollisionEnter;
 
     public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomGeneratorOptions options, Door.OnCollisionEnterDel callback)
@@ -39,7 +38,9 @@ public class Node : MonoBehaviour
         Material material = renderer.material;
         if(vertices.Count > 0 )
         {
-            material.SetVectorArray("_RoomVertices", vertices.Select(x => new Vector4(x.x, x.y, x.z, 0)).ToArray());
+            List<Vector4> vector4s = vertices.Select(x => new Vector4(x.x, x.y, x.z, 0)).ToList();
+            vector4s.AddRange(new Vector4[1000 - vertices.Count].ToList()); // fill up to 1000 to keep shader array the same size (reducing its size would maybe limit future array sizes)
+            material.SetVectorArray("_RoomVertices", vector4s);
         }
         material.SetInt("_RoomVertexCount", vertices.Count);
         renderer.material = material;
@@ -157,8 +158,9 @@ public class Node : MonoBehaviour
 
         for(int i=0; i<verticesList.Count; i++)
         {
-            combinedTriangles.AddRange(trianglesList[i].Select(x => x + combinedVertices.Count));
-            combinedVertices.AddRange(verticesList[i]);
+            /*combinedTriangles.AddRange(trianglesList[i].Select(x => x + combinedVertices.Count));
+            combinedVertices.AddRange(verticesList[i]);*/
+            // invert vertices to also make backside visible
             List<Vector3> verticesInverted = verticesList[i].ToList();
             verticesInverted.Reverse();
             combinedTriangles.AddRange(trianglesList[i].Select(x => x + combinedVertices.Count));

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,6 +10,7 @@ public class ArcRoomSegment : RoomSegment
         this.normalUp = normalUp;
     }
 
+#if UNITY_EDITOR
     public override void drawHandles()
     {
         Vector3 center, normal, from, to;
@@ -26,4 +25,5 @@ public class ArcRoomSegment : RoomSegment
 
         Handles.DrawWireArc(center, normal, from, angle, radius, width);
     }
+#endif
 }

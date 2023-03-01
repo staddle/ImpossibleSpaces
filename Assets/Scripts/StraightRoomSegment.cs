@@ -39,10 +39,11 @@ public class StraightRoomSegment : RoomSegment
         return playArea.isInside(startPoint + outDirection * lengthInRhythmDirectionWherePlayAreaCannotEnd) &&
             playArea.isInside(endPoint + outDirection * lengthInRhythmDirectionWherePlayAreaCannotEnd);
     }
-
+#if UNITY_EDITOR
     public override void drawHandles()
     {
         Handles.color = color;
         Handles.DrawLine(Vector2At(startPoint,0), Vector2At(endPoint,0));
     }
+#endif
 }
