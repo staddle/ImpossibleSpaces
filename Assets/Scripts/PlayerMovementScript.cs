@@ -37,13 +37,11 @@ public class PlayerMovementScript : MonoBehaviour
         if(!primary.Equals(Vector2.zero))
         {
             m_Move = primary;
-            Debug.Log("Primary Thumbsstick " + primary.ToString());
         }
         Vector2 secondary = OVRInput.Get(OVRInput.Axis2D.SecondaryThumbstick);
         if (!secondary.Equals(Vector2.zero))
         {   
             m_LookVR = secondary;
-            Debug.Log("Secondary Thumbsstick " + secondary.ToString());
         }
     }
 
