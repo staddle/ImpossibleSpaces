@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +9,7 @@ namespace Assets.Scripts
     {
         public List<Vector2> vertices = new List<Vector2>();
         public int numberOfEdges { get { return vertices.Count; } }
+        public Vector2 connectionToNext, connectionToPrev;
 
         public GeneralLayoutRoom(List<Vector2> _vertices)
         {
@@ -23,16 +23,26 @@ namespace Assets.Scripts
 
         public bool isInside(Vector2 point)
         {
-            bool isInside = false;
+            return isInsideInt(point).Count % 2 != 0;
+        }
+
+        public bool isInside(Vector3 point)
+        {
+            return isInside(new Vector2(point.x, point.z));
+        }
+
+        public List<int> isInsideInt(Vector2 point)
+        {
+            List<int> intersections = new List<int>();
             for (int i = 0, j = numberOfEdges - 1; i < numberOfEdges; j = i++)
             {
                 if (((vertices[i].y > point.y) != (vertices[j].y > point.y)) &&
                     (point.x < (vertices[j].x - vertices[i].x) * (point.y - vertices[i].y) / (vertices[j].y - vertices[i].y) + vertices[i].x))
                 {
-                    isInside = !isInside;
+                    intersections.Add(i);
                 }
             }
-            return isInside;
+            return intersections;
         }
 
         public bool isOnEdge(Vector2 point)

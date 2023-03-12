@@ -17,12 +17,12 @@ public class PlayerMovementScript : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        //m_Move = context.ReadValue<Vector2>();
+        m_Move = context.ReadValue<Vector2>();
     }
 
     public void OnLook(InputAction.CallbackContext context)
     {
-        //m_Look = context.ReadValue<Vector2>();
+        m_Look = context.ReadValue<Vector2>();
     }   
 
     public void Update()
@@ -30,19 +30,23 @@ public class PlayerMovementScript : MonoBehaviour
         // Update orientation first, then move. Otherwise move orientation will lag
         // behind by one frame.
         Look(m_Look);
-        LookVR(m_LookVR);
+        #if ENABLE_VR
+            LookVR(m_LookVR);
+        #endif
         Move(m_Move);
-        OVRInput.Update();
-        Vector2 primary = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick);
-        if(!primary.Equals(Vector2.zero))
-        {
-            m_Move = primary;
-        }
-        Vector2 secondary = OVRInput.Get(OVRInput.Axis2D.SecondaryThumbstick);
-        if (!secondary.Equals(Vector2.zero))
-        {   
-            m_LookVR = secondary;
-        }
+        #if ENABLE_VR
+            OVRInput.Update();
+            Vector2 primary = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick);
+            if(!primary.Equals(Vector2.zero))
+            {
+                m_Move = primary;
+            }
+            Vector2 secondary = OVRInput.Get(OVRInput.Axis2D.SecondaryThumbstick);
+            if (!secondary.Equals(Vector2.zero))
+            {   
+                m_LookVR = secondary;
+            }
+        #endif
     }
 
     private void Move(Vector2 direction)

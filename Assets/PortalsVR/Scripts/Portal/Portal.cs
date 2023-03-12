@@ -1,4 +1,5 @@
 ﻿using Meta.WitAi;
+using Oculus.Platform;
 using OVR.OpenVR;
 using RotaryHeart.Lib.SerializableDictionary;
 using System;
@@ -14,6 +15,8 @@ namespace PortalsVR
     {
         #region Fields
         [SerializeField] private Portal linkedPortal;
+        [SerializeField] private bool resetSetup = false;
+        [SerializeField] private CopyMovement movement;
 
         [Header("Settings")]
         [SerializeField] private int recursionLimit = 5;
@@ -72,6 +75,11 @@ namespace PortalsVR
             {
                 setupPortalInfos();
             }
+            if(resetSetup)
+            {
+                setupPortalInfos();
+                resetSetup = false;
+            }
         }
 
         private void LateUpdate()
@@ -117,6 +125,26 @@ namespace PortalsVR
             portalInfo[Camera.StereoscopicEye.Right].eye.Portals.Remove(this);
         }
 
+
+        private Tuple<Vector3, Vector3, Camera> moveCamera(Camera camera)
+        {
+            Tuple<Vector3, Vector3, Camera> ret = new Tuple<Vector3, Vector3, Camera>(camera.transform.localPosition, camera.transform.localRotation.eulerAngles, camera);
+            camera.transform.parent.parent.Translate(ret.Item1);
+            camera.transform.parent.parent.Rotate(ret.Item2);
+            camera.transform.localPosition = Vector3.zero;
+            camera.transform.localRotation = Quaternion.identity;
+            return ret;
+        }
+
+        private void unMoveCamera(Tuple<Vector3, Vector3, Camera> posAndRot)
+        {
+            Camera camera = posAndRot.Item3;
+            camera.transform.parent.Translate(-posAndRot.Item1);
+            camera.transform.parent.Rotate(-posAndRot.Item2);
+            camera.transform.localPosition = posAndRot.Item1;
+            camera.transform.Rotate(posAndRot.Item2);
+        }
+
         public void Render(Camera.StereoscopicEye eye)
         {
             if (!CameraUtility.VisibleFromCamera(linkedPortal.portalInfo[eye].screen, portalInfo[eye].eye.Camera) || !IsActive)
@@ -124,7 +152,16 @@ namespace PortalsVR
                 return;
             }
 
-            var localToWorldMatrix = portalInfo[eye].alias.localToWorldMatrix;
+            var localToWorldMatrixBefore = portalInfo[eye].alias.localToWorldMatrix;
+            Matrix4x4 testmatrix = new Matrix4x4();
+            if (movement != null)
+            {
+                testmatrix = movement.transform.localToWorldMatrix;
+            }
+            //var posAndRot = moveCamera(portalInfo[eye].eye.Camera);
+            //var localToWorldMatrix = portalInfo[eye].alias.localToWorldMatrix;
+            //unMoveCamera(posAndRot);
+            var localToWorldMatrix = testmatrix;
             var renderPositions = new Vector3[recursionLimit];
             var renderRotations = new Quaternion[recursionLimit];
 

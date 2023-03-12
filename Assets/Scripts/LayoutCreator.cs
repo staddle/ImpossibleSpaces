@@ -12,16 +12,22 @@ public partial class LayoutCreator : MonoBehaviour
     public bool testRoom = false;
     public List<Vector2> testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
     public Node currentRoom;
+    public AutoMoveThroughRooms autoMove;
 
     static Dictionary<Node, RoomDebug> roomDebugs = new Dictionary<Node, RoomDebug>();
     static LayoutCreator instance;
     bool switchedRoom = false;
 
+    private void Awake()
+    {
+        instance = this;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
-        instance = this;
         roomGeneratorOptions = gameObject.GetComponent<RoomGeneratorOptions>();
+        autoMove = roomGeneratorOptions.playerTransform.gameObject.GetComponent<AutoMoveThroughRooms>();
         playArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, roomGeneratorOptions.playArea.y),
             new(roomGeneratorOptions.playArea.x, roomGeneratorOptions.playArea.y), new(roomGeneratorOptions.playArea.x, 0) }); ;
 
@@ -50,6 +56,8 @@ public partial class LayoutCreator : MonoBehaviour
         return instance;
     }
 
+    public static Dictionary<Node, RoomDebug> RoomDebugs => roomDebugs;
+
     public void regenerateLayout()
     {
         if (playArea != null)
@@ -59,6 +67,7 @@ public partial class LayoutCreator : MonoBehaviour
             {
                 Destroy(roomsParent.transform.GetChild(i).gameObject);
             }
+            setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
             currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, gameObject.GetComponent<RoomGeneratorOptions>(), testRoom ? testRoomVertices : null);
             currentRoom.gameObject.SetActive(true);
             setFollowingRooms(currentRoom, true);
@@ -80,6 +89,10 @@ public partial class LayoutCreator : MonoBehaviour
         currentRoom.setAllDoorsActive(true);
         setFollowingRooms(currentRoom, true);
         switchedRoom = door;
+        if(get().autoMove != null)
+        {
+            get().autoMove.triggeredDoor(door);
+        }
     }
 
     private void setFollowingRooms(Node room, bool active)
@@ -111,7 +124,10 @@ public partial class LayoutCreator : MonoBehaviour
         if (player != null && collider == player)
         {
             if (get().switchedRoom) get().switchedRoom = false;
-            else get().goNextRoom(door);
+            else
+            {
+                get().goNextRoom(door);
+            }
         }
     }
 
@@ -121,7 +137,7 @@ public partial class LayoutCreator : MonoBehaviour
         //connectPoints(sampledPoints);
         if (roomDebugs.TryGetValue(currentRoom, out RoomDebug roomDebug))
         { 
-            createRandomRoomInternal(roomDebug.currentGeneralLayoutRooms, null, null, roomGeneratorOptions);
+            createRandomRoomInternal(roomDebug.generalLayoutRooms, null, null, roomGeneratorOptions);
         }
     }
 
@@ -134,21 +150,21 @@ public partial class LayoutCreator : MonoBehaviour
             if (roomGeneratorOptions.showGeneralLayoutRooms)
             {
                 Gizmos.color = Color.blue;
-                foreach (GeneralLayoutRoom room in roomDebug.currentGeneralLayoutRooms)
+                foreach (GeneralLayoutRoom room in roomDebug.generalLayoutRooms)
                 {
                     drawGeneralLayoutRoom(room);
                 }
             }
-            if(roomGeneratorOptions.showBigRoom && roomDebug.currentBigRoom != null)
+            if(roomGeneratorOptions.showBigRoom && roomDebug.bigRoom != null)
             {
                 Gizmos.color = Color.red;
-                drawGeneralLayoutRoom(roomDebug.currentBigRoom, roomGeneratorOptions.showVertexNumbers);
+                drawGeneralLayoutRoom(roomDebug.bigRoom, roomGeneratorOptions.showVertexNumbers);
             }
-            if (roomGeneratorOptions.showSamplePoints && roomDebug.currentSampledPoints.Count > 0) 
+            if (roomGeneratorOptions.showSamplePoints && roomDebug.sampledPoints.Count > 0) 
             { 
-                for(int i=0; i< roomDebug.currentSampledPoints.Count; i++)
+                for(int i=0; i< roomDebug.sampledPoints.Count; i++)
                 {
-                    Vector3 point = Vector2At(roomDebug.currentSampledPoints.ElementAt(i), 0);
+                    Vector3 point = Vector2At(roomDebug.sampledPoints.ElementAt(i), 0);
                     Gizmos.color = Color.red;
                     Gizmos.DrawSphere(point, 0.05f);
                     if(roomGeneratorOptions.showSamplePointNumbers)
@@ -183,6 +199,7 @@ public partial class LayoutCreator : MonoBehaviour
         {
             wall.transform.parent = parentObject.transform;
             wall.transform.localScale = new Vector3(1.005f, 1, wallHeight / 10);
+            wall.GetComponent<MeshCollider>().enabled = false;
         }
 
         //build play area a bit bigger to stop z-fighting of room and play area
@@ -203,7 +220,7 @@ public partial class LayoutCreator : MonoBehaviour
 
     private void setUpPlayerPosition(Vector3 startPosition)
     {
-        roomGeneratorOptions.playerTransform.Translate(startPosition);
+        roomGeneratorOptions.playerTransform.position = startPosition;
     }
 
     public static Node createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, Node previousRoom, Door previousDoor, RoomGeneratorOptions options, List<Vector2> testVertices = null)
@@ -417,6 +434,8 @@ public partial class LayoutCreator : MonoBehaviour
                 {
                     // if point 0 or 4 of next room is between last added point and next-to-add point, add next room first
                     bigRoomVertices = createBigRoomRec(roomIndex + 1, bigRoomVertices, generalLayoutRooms, 1);
+                    room.connectionToNext = room.vertices[iAdjusted] + (bigRoomVertices.Last() - room.vertices[iAdjusted]) / 2;
+                    nextRoom.connectionToPrev = room.connectionToNext;
                 }
             }
         }

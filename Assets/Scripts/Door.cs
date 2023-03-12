@@ -6,6 +6,7 @@ public class Door : MonoBehaviour
 {
     public Vector3 position;
     public Vector3 point1, point2;
+    public Vector3 outwardsDirection;
     public RoomSegment roomSegment;
     public Node previousNode;
     public Node nextNode;
@@ -41,6 +42,8 @@ public class Door : MonoBehaviour
         return new(point2.x, point2.z);
     }
 
+    public BoxCollider DoorCollider => doorCollider;
+
     private void OnTriggerEnter(Collider collider)
     {
         Debug.Log("Collision detected on " + gameObject.name + " with " + collider.gameObject.name);
@@ -54,7 +57,7 @@ public class Door : MonoBehaviour
         Vector2 p1top2 = p2 - p1;
         Vector2 outwards = new Vector2(p1top2.y, -p1top2.x).normalized;
         GeneralLayoutRoom generalLayoutRoom = new GeneralLayoutRoom(new List<Vector2>() { p1, p2, p2 + outwards * doorArea, p1 + outwards * doorArea });
-        return generalLayoutRoom.isInside(new(point.x, point.z));
+        return generalLayoutRoom.isInside(new Vector2(point.x, point.z));
     }
 
     // Start is called before the first frame update
@@ -66,9 +69,9 @@ public class Door : MonoBehaviour
         doorCollider.center = position + Vector3.up * doorHeight / 2;
         Vector3 size = new Vector3(0, doorHeight, 0);
         Vector3 p1Top2 = point2 - point1;
-        Vector3 outwards = Vector3.Cross(p1Top2, new(0, 1, 0)).normalized;
+        outwardsDirection = Vector3.Cross(p1Top2, new(0, 1, 0)).normalized;
         size += p1Top2;
-        size += outwards * doorArea / 2;
+        size += outwardsDirection * doorArea / 4;
         for(int i=0; i<3; i++)
         {
             if (size[i] < 0f) size[i] *= -1;

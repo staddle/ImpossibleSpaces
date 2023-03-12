@@ -158,8 +158,8 @@ public class Node : MonoBehaviour
 
         for(int i=0; i<verticesList.Count; i++)
         {
-            /*combinedTriangles.AddRange(trianglesList[i].Select(x => x + combinedVertices.Count));
-            combinedVertices.AddRange(verticesList[i]);*/
+            combinedTriangles.AddRange(trianglesList[i].Select(x => x + combinedVertices.Count));
+            combinedVertices.AddRange(verticesList[i]);
             // invert vertices to also make backside visible
             List<Vector3> verticesInverted = verticesList[i].ToList();
             verticesInverted.Reverse();
@@ -203,5 +203,10 @@ public class Node : MonoBehaviour
     public List<Vector3> getVertices()
     {
         return segments.Select(s => LayoutCreator.Vector2At(s.startPoint,0)).ToList();
+    }
+
+    public List<Vector2> getVerticesV2()
+    {
+        return segments.Select(s => (s.startPoint)).ToList();
     }
 }
