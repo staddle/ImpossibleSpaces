@@ -1,5 +1,3 @@
-using Assets.Scripts;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,6 +6,7 @@ public class Node : MonoBehaviour
 {
     public List<Door> doors = new List<Door>();
     public LinkedList<RoomSegment> segments;
+    public int depth;
     RoomGeneratorOptions options;
     MeshFilter meshFilter;
     Mesh mesh;
@@ -18,6 +17,7 @@ public class Node : MonoBehaviour
     {
         this.segments = segments;
         this.options = options;
+        depth = previousNode == null ? 0 : previousNode.depth + 1;
         onCollisionEnter = callback;
 
         // first room doesn't have a back door

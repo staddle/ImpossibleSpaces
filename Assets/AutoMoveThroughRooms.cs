@@ -15,7 +15,8 @@ public class AutoMoveThroughRooms : MonoBehaviour
     private bool debugMode = false;
     [SerializeField]
     private float debugGizmosSize = 0.2f;
-
+    [SerializeField]
+    private bool log = false;
 
     private LayoutCreator creator;
 
@@ -26,7 +27,6 @@ public class AutoMoveThroughRooms : MonoBehaviour
 
     private HashSet<Node> traversedNodes = new HashSet<Node>();
     private Node startRoom;
-    private bool backtracking = false;
     private System.Random random = new System.Random();
 
     // Start is called before the first frame update
@@ -38,11 +38,7 @@ public class AutoMoveThroughRooms : MonoBehaviour
     public void triggeredDoor(Door door)
     {
         if (door == this.door) return; // as expected
-        else
-        {
-            //unexpectedly walked through other door
-            resetProgress(creator.currentRoom);
-        }
+        else resetProgress(creator.currentRoom); //unexpectedly walked through other door
     }
 
     List<Vector3> calculateWaypoints()
@@ -129,13 +125,12 @@ public class AutoMoveThroughRooms : MonoBehaviour
             direction.Normalize();
             transform.Translate(direction * Time.deltaTime * moveSpeed); // move in direction of next waypoint
             camTransform.Rotate(new Vector3(0, Vector3.Angle(camTransform.forward, direction), 0));
-            //camTransform.LookAt(waypoints[currentWaypoint] + new Vector3(0,1,0));
         }
     }
 
     void resetEverything()
     {
-        Debug.Log("Regenerating layout...");
+        if(log) Debug.Log("Regenerating layout...");
         creator.regenerateLayout();
         startRoom = null;
         door = null;
@@ -177,7 +172,6 @@ public class AutoMoveThroughRooms : MonoBehaviour
                     else
                     {
                         door = nextRoom.doors[0]; // get back to previous room TODO: Walk in/out of collider?
-                        backtracking = true;
                         Debug.Log("Backtracking");
                     }
                     break;
@@ -191,13 +185,7 @@ public class AutoMoveThroughRooms : MonoBehaviour
             door = currentRoom.doors[doorIndex];
         }
         waypoints = calculateWaypoints();
-        Debug.Log(string.Join(", ", waypoints));
-    }
-    
-    void moveToDoor()
-    {
-        Vector3 direction = door.position - transform.position;
-        transform.Translate(direction);
+        if(log) Debug.Log(string.Join(", ", waypoints));
     }
 
     private void OnDrawGizmos()

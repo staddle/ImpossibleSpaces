@@ -37,6 +37,7 @@ public class RoomGeneratorOptions : MonoBehaviour
     public float doorWidth = 1f;
     [Tooltip("When going back through the door you came from, should the room be the previous one or a newly generated one?")]
     public bool backDoorToPreviousRoom = true;
+    public bool roomsCanOverlap = true;
 
     [Header("Layout")]
     public LayoutType type = LayoutType.arcs;
