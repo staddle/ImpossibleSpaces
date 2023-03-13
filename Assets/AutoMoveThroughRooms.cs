@@ -38,7 +38,7 @@ public class AutoMoveThroughRooms : MonoBehaviour
     public void triggeredDoor(Door door)
     {
         if (door == this.door) return; // as expected
-        else resetProgress(creator.currentRoom); //unexpectedly walked through other door
+        else resetProgress(creator.CurrentRoom); //unexpectedly walked through other door
     }
 
     List<Vector3> calculateWaypoints()
@@ -102,10 +102,10 @@ public class AutoMoveThroughRooms : MonoBehaviour
     {
         if(startRoom == null)
         {
-            if(creator.currentRoom != null && creator.currentRoom.doors != null)
+            if(creator.CurrentRoom != null && creator.CurrentRoom.doors != null)
             {
-                startRoom = creator.currentRoom;
-                resetProgress(creator.currentRoom);
+                startRoom = creator.CurrentRoom;
+                resetProgress(creator.CurrentRoom);
             }
         }
         if(door != null)
