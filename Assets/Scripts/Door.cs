@@ -46,7 +46,7 @@ public class Door : MonoBehaviour
 
     private void OnTriggerEnter(Collider collider)
     {
-        Debug.Log("Collision detected on " + gameObject.name + " with " + collider.gameObject.name);
+        //Debug.Log("Collision detected on " + gameObject.name + " with " + collider.gameObject.name);
         onCollisionEnter(collider, this);
     }
 

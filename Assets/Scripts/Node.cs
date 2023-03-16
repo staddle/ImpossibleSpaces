@@ -188,18 +188,6 @@ public class Node : MonoBehaviour
         }*/
     }
 
-    public void generateNextRooms()
-    {
-        foreach (Door door in doors)
-        {
-            if (door.nextNode == null)
-            {
-                Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-                door.nextNode = LayoutCreator.createRandomRoom(new(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, this, door, options);
-            }
-        }
-    }
-
     public List<Vector3> getVertices()
     {
         return segments.Select(s => LayoutCreator.Vector2At(s.startPoint,0)).ToList();

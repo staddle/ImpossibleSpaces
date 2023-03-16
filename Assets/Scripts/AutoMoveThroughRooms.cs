@@ -1,8 +1,6 @@
 using Assets.Scripts;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
-using UnityEditor.XR.LegacyInputHelpers;
 using UnityEngine;
 
 public class AutoMoveThroughRooms : MonoBehaviour
@@ -172,7 +170,7 @@ public class AutoMoveThroughRooms : MonoBehaviour
                     else
                     {
                         door = nextRoom.doors[0]; // get back to previous room TODO: Walk in/out of collider?
-                        Debug.Log("Backtracking");
+                        if(log) Debug.Log("Backtracking");
                     }
                     break;
                 } 

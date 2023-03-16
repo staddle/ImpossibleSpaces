@@ -24,6 +24,8 @@ public class LayoutCreatorEditor : Editor
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("generationAlgorithm"));
+        if (layoutCreator.generationAlgorithm == null) return;
         using (new GUILayout.VerticalScope())
         {
             if (GUILayout.Button("Regenerate Layout", buttonStyle()))
@@ -34,14 +36,14 @@ public class LayoutCreatorEditor : Editor
             {
                 layoutCreator.redraw();
             }
-            if(layoutCreator.currentRoom != null)
+            if(layoutCreator.CurrentRoom != null)
                 using (new GUILayout.HorizontalScope())
                 {
-                    for(int i=0; i < layoutCreator.currentRoom.doors.Count; i++)
+                    for(int i=0; i < layoutCreator.CurrentRoom.doors.Count; i++)
                     {
                         if(GUILayout.Button("Door "+i))
                         {
-                            layoutCreator.goNextRoom(i);
+                            layoutCreator.goNextRoom(layoutCreator.CurrentRoom.doors[i]);
                         }
                     }
                 }
@@ -67,12 +69,12 @@ public class LayoutCreatorEditor : Editor
                     }
                 }
             }
-            if(layoutCreator.currentRoom != null)
+            if(layoutCreator.CurrentRoom != null)
             {
                 segmentsFoldOut = EditorGUILayout.Foldout(segmentsFoldOut, "RoomSegments");
                 if(segmentsFoldOut)
                 {
-                    LinkedList<RoomSegment> segments = layoutCreator.currentRoom.segments;
+                    LinkedList<RoomSegment> segments = layoutCreator.CurrentRoom.segments;
                     for (int i = 0; i < segments.Count; i++)
                     {
                         using (new GUILayout.VerticalScope())
@@ -89,7 +91,7 @@ public class LayoutCreatorEditor : Editor
                 doorsFoldOut = EditorGUILayout.Foldout(doorsFoldOut, "Doors");
                 if (doorsFoldOut)
                 {
-                    List<Door> doors = layoutCreator.currentRoom.doors;
+                    List<Door> doors = layoutCreator.CurrentRoom.doors;
                     for (int i = 0; i < doors.Count; i++)
                     {
                         using (new GUILayout.VerticalScope())
@@ -130,9 +132,9 @@ public class LayoutCreatorEditor : Editor
                  }
              }
          }*/
-        if (layoutCreator == null || layoutCreator.currentRoom == null)
+        if (layoutCreator == null || layoutCreator.generationAlgorithm == null || layoutCreator.CurrentRoom == null)
             return;
-        var doors = layoutCreator.currentRoom.doors;
+        var doors = layoutCreator.CurrentRoom.doors;
         if (doors == null)
             return;
         for (int i = 0; i < doors.Count; i++)
