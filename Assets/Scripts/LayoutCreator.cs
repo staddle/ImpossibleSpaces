@@ -1,5 +1,4 @@
 using Assets.Scripts;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -271,6 +270,33 @@ public partial class LayoutCreator : MonoBehaviour
         return point;
     }
 
+    public static bool handleOverlapRooms(out Vector2 newPoint, Vector2 point, Vector2 startingPoint, List<Node> noOverlapRooms)
+    {
+        bool ret = true;
+        foreach(var node in noOverlapRooms)
+        {
+            GeneralLayoutRoom bigRoom = node.roomDebug.bigRoom;
+            if (bigRoom.isInside(point))
+            {
+                if (bigRoom.isInside(startingPoint))
+                    ret = false;
+                for (int i = 0, j = bigRoom.numberOfEdges - 1; i < bigRoom.numberOfEdges; j = i++)
+                {
+                    if(LineLineIntersection(out Vector2 intersection, point, startingPoint - point, bigRoom.vertices[i], bigRoom.vertices[j] - bigRoom.vertices[i]))
+                    {
+                        if((intersection - point).magnitude < (startingPoint - point).magnitude)
+                        {
+                            point = intersection;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        newPoint = point;
+        return ret;
+    }
+
     // from https://stackoverflow.com/questions/59449628/check-when-two-vector3-lines-intersect-unity3d
     public static bool LineLineIntersection(out Vector3 intersection, Vector3 linePoint1,
         Vector3 lineVec1, Vector3 linePoint2, Vector3 lineVec2)
@@ -298,7 +324,15 @@ public partial class LayoutCreator : MonoBehaviour
         }
     }
 
-    public static float randomFloat(float min, float max)
+    public static bool LineLineIntersection(out Vector2 intersection, Vector2 linePoint1,
+        Vector2 lineVec1, Vector2 linePoint2, Vector2 lineVec2)
+    {
+        bool result = LineLineIntersection(out Vector3 intersectionV3, Vector2At(linePoint1, 0), Vector2At(lineVec1, 0), Vector2At(linePoint2, 0), Vector2At(lineVec2, 0));
+        intersection = new(intersectionV3.x, intersectionV3.z);
+        return result;
+    }
+
+        public static float randomFloat(float min, float max)
     {
         System.Random random = new System.Random();
         return (float)random.NextDouble() * (max - min) + min;

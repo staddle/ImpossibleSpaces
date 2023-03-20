@@ -31,6 +31,9 @@ public class AutoMoveThroughRooms : MonoBehaviour
     void Start()
     {
         creator = LayoutCreator.get();
+        var move = GetComponent<PlayerMovementScript>();
+        if (move != null)
+            move.enabled = false;
     }
 
     public void triggeredDoor(Door door)

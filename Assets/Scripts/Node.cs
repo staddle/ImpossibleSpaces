@@ -1,22 +1,25 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static LayoutCreator;
 
 public class Node : MonoBehaviour
 {
     public List<Door> doors = new List<Door>();
     public LinkedList<RoomSegment> segments;
     public int depth;
+    public RoomDebug roomDebug;
     RoomGeneratorOptions options;
     MeshFilter meshFilter;
     Mesh mesh;
     System.Random random = new System.Random();
     Door.OnCollisionEnterDel onCollisionEnter;
 
-    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomGeneratorOptions options, Door.OnCollisionEnterDel callback)
+    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomDebug roomDebug, RoomGeneratorOptions options, Door.OnCollisionEnterDel callback)
     {
         this.segments = segments;
         this.options = options;
+        this.roomDebug = roomDebug;
         depth = previousNode == null ? 0 : previousNode.depth + 1;
         onCollisionEnter = callback;
 
@@ -87,6 +90,8 @@ public class Node : MonoBehaviour
         meshFilter.mesh = mesh;
         MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
         meshRenderer.material = material;
+        MeshCollider meshCollider = gameObject.AddComponent<MeshCollider>();
+        //meshCollider.isTrigger = true;
 
         List<List<int>> trianglesList = new List<List<int>>();
         List<Vector3[]> verticesList = new List<Vector3[]>();
@@ -170,6 +175,7 @@ public class Node : MonoBehaviour
         mesh.triangles = combinedTriangles.ToArray();
 
         meshFilter.mesh = mesh;
+        meshCollider.sharedMesh = mesh;
     }
 
     // Start is called before the first frame update
