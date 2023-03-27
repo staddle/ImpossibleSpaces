@@ -31,6 +31,10 @@ namespace Assets.Scripts
             {
                 float minimumWidth = options.doorWidth; //first room wall (with door back) should at least contain the door -> be broad enough to fit th edoor
                 GeneralLayoutRoom prevRoom = createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, minimumWidth, noOverlapRooms, options, testVertices);
+                if(prevRoom == null)
+                {
+                    return null;
+                }
                 generalLayoutRooms.AddLast(prevRoom);
 
                 // create next room(s) with starting point on previous room's edge but inside playarea
@@ -74,7 +78,12 @@ namespace Assets.Scripts
             LinkedList<RoomSegment> roomSegments = connectPoints(sampledPoints, options);
 
             GameObject roomGameObject = new GameObject("Room" + Time.fixedTime);
-            roomGameObject.transform.parent = GameObject.Find("Rooms").transform;
+            var roomsGO = GameObject.Find("Rooms");
+            if(roomsGO == null)
+            {
+                roomsGO = new GameObject("Rooms");
+            }
+            roomGameObject.transform.parent = roomsGO.transform;
             roomGameObject.SetActive(false);
 
             Node room = roomGameObject.AddComponent<Node>();
@@ -333,7 +342,7 @@ namespace Assets.Scripts
             point3 = point2 + rhythmDirection * depth;
             point4 = point1 + rhythmDirection * depth;
 
-            // check when extruding in depth if point3 / point4 lay outside of playarea
+            // check when extruding in depth if point3 / point4 lie outside of playarea
             Vector2 newPoint3 = handlePointOutside(point3, rhythmDirection);
             Vector2 newPoint4 = handlePointOutside(point4, rhythmDirection);
 
@@ -403,18 +412,6 @@ namespace Assets.Scripts
             // what if not go "back" with points 3 and 4 but change width of room (move point 1 and 4 instead of move point 3 and 4)
 
             return new GeneralLayoutRoom(new List<Vector2>() { point1, point2, point3, point4 });
-        }
-
-        // Use this for initialization
-        void Start()
-        {
-
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
         }
     }
 }

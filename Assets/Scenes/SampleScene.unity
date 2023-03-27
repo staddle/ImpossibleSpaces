@@ -1569,7 +1569,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1725982592}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 82f67a5857e4915459410bf0a1919429, type: 3}
   m_Name: 
@@ -1717,6 +1717,7 @@ MonoBehaviour:
   doorWidth: 1
   backDoorToPreviousRoom: 1
   oldRoomGenerator: 0
+  debugGenerator: 1
   type: 1
   useOnlyVertices: 1
   invertAfterEachPoint: 1
@@ -1732,6 +1733,7 @@ MonoBehaviour:
   playerTransform: {fileID: 1725982594}
   doorArea: 0.5
   renderNextRoomsAlready: 0
+  depthForward: 3
   roomMaterial: {fileID: 2100000, guid: 730fef78c605be340ba1205c15db3005, type: 2}
 --- !u!1001 &1934505122
 PrefabInstance:

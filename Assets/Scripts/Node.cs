@@ -9,6 +9,7 @@ public class Node : MonoBehaviour
     public LinkedList<RoomSegment> segments;
     public int depth;
     public RoomDebug roomDebug;
+    public int LayerNumber { get { return 9 + depth % 10; } }
     RoomGeneratorOptions options;
     MeshFilter meshFilter;
     Mesh mesh;
@@ -20,6 +21,7 @@ public class Node : MonoBehaviour
         this.segments = segments;
         this.options = options;
         this.roomDebug = roomDebug;
+        gameObject.layer = LayerNumber;
         depth = previousNode == null ? 0 : previousNode.depth + 1;
         onCollisionEnter = callback;
 
@@ -28,6 +30,7 @@ public class Node : MonoBehaviour
         {
             GameObject doorGO = new GameObject("Door 0");
             doorGO.transform.parent = transform;
+            doorGO.layer = previousNode.LayerNumber;
             Door door = doorGO.AddComponent<Door>();
             door.setupDoor(segments.First.Value, this, previousDoor.position, options.doorHeight, options.doorArea, onCollisionEnter);
             door.nextNode = previousNode;
@@ -59,7 +62,7 @@ public class Node : MonoBehaviour
         int numberOfDoors = random.Next(options.minNumberOfDoorsPerRoom, options.maxNumberOfDoorsPerRoom);
 
         List<RoomSegment> segmentsThatAllowDoors = segments.Where(s => 
-            s.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, LayoutCreator.playArea) &&
+            s.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, playArea) &&
             doors.Where(x => x.roomSegment == s).Count() == 0).ToList(); //disallow multiple doors per segment (TODO)
         if(segmentsThatAllowDoors.Count == 0)
         {
@@ -73,7 +76,7 @@ public class Node : MonoBehaviour
             GameObject doorGO = new GameObject("Door "+(i+1));
             doorGO.transform.parent = transform;
             Door door = doorGO.AddComponent<Door>();
-            door.setupDoor(segment, this, LayoutCreator.Vector2At(segment.getRandomDoorLocation(options), 0), options.doorHeight, options.doorArea, onCollisionEnter);
+            door.setupDoor(segment, this, Vector2At(segment.getRandomDoorLocation(options), 0), options.doorHeight, options.doorArea, onCollisionEnter);
             doors.Add(door);
         }
     }
@@ -85,12 +88,26 @@ public class Node : MonoBehaviour
             Debug.LogError("No room segments found to generate mesh with");
             return;
         }
-        meshFilter = gameObject.AddComponent<MeshFilter>();
+        var hasMeshFilter = gameObject.TryGetComponent(out meshFilter);
+        if(!hasMeshFilter)
+        {
+            meshFilter = gameObject.AddComponent<MeshFilter>();
+        }
         mesh = new Mesh();
         meshFilter.mesh = mesh;
-        MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        MeshRenderer meshRenderer;
+        MeshCollider meshCollider;
+        var hasRenderer = gameObject.TryGetComponent(out meshRenderer);
+        if (!hasRenderer)
+        {
+            meshRenderer = gameObject.AddComponent<MeshRenderer>();
+            meshCollider = gameObject.AddComponent<MeshCollider>();
+        } 
+        else
+        {
+            meshCollider = gameObject.GetComponent<MeshCollider>();
+        }
         meshRenderer.material = material;
-        MeshCollider meshCollider = gameObject.AddComponent<MeshCollider>();
         //meshCollider.isTrigger = true;
 
         List<List<int>> trianglesList = new List<List<int>>();
@@ -173,8 +190,12 @@ public class Node : MonoBehaviour
         }
         mesh.vertices = combinedVertices.ToArray();
         mesh.triangles = combinedTriangles.ToArray();
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+        mesh.RecalculateBounds();
 
         meshFilter.mesh = mesh;
+        
         meshCollider.sharedMesh = mesh;
     }
 

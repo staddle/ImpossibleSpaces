@@ -29,6 +29,12 @@ public partial class LayoutCreator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        var layersGenerator = new Layers();
+        for(int i=1; i<=10; i++)
+        {
+            layersGenerator.AddNewLayer("RoomsLayer " + i);
+        }
+
         roomGeneratorOptions = gameObject.GetComponent<RoomGeneratorOptions>();
         autoMove = roomGeneratorOptions.playerTransform.gameObject.GetComponent<AutoMoveThroughRooms>();
         playArea = new GeneralLayoutRoom(new List<Vector2>() { Vector2.zero, new(0, roomGeneratorOptions.playArea.y),
@@ -148,6 +154,7 @@ public partial class LayoutCreator : MonoBehaviour
                     Vector3 point = Vector2At(roomDebug.sampledPoints.ElementAt(i), 0);
                     Gizmos.color = Color.red;
                     Gizmos.DrawSphere(point, 0.05f);
+                    DrawString(point.ToString(), point);
                     if(roomGeneratorOptions.showSamplePointNumbers)
                     {
                         DrawString(i.ToString(), point);
@@ -273,10 +280,11 @@ public partial class LayoutCreator : MonoBehaviour
     public static bool handleOverlapRooms(out Vector2 newPoint, Vector2 point, Vector2 startingPoint, List<Node> noOverlapRooms)
     {
         bool ret = true;
+        var oldPoint = point;
         foreach(var node in noOverlapRooms)
         {
             GeneralLayoutRoom bigRoom = node.roomDebug.bigRoom;
-            if (bigRoom.isInside(point))
+            if (bigRoom.isInside(point) || bigRoom.isOnEdge(point))
             {
                 if (bigRoom.isInside(startingPoint))
                     ret = false;
@@ -294,6 +302,7 @@ public partial class LayoutCreator : MonoBehaviour
             }
         }
         newPoint = point;
+        if(!oldPoint.Equals(newPoint)) Debug.Log(point + " - " + newPoint);
         return ret;
     }
 

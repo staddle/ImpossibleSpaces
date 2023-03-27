@@ -6,7 +6,7 @@ public class RoomGeneratorOptions : MonoBehaviour
     public Vector2 playArea = new Vector2(10, 10);
     public float playAreaWallHeight = 3f;
     public Vector3 bottomLeftMostPoint = new Vector3(0, 0, 0);
-    public Vector3 playerStartingPoint = new Vector3(1, 0, 1);
+    public Vector3 playerStartingPoint = new Vector3(0.5f, 0, 0.5f);
 
     [Header("General")]
     [Range(0,10)]
@@ -38,10 +38,11 @@ public class RoomGeneratorOptions : MonoBehaviour
     [Tooltip("When going back through the door you came from, should the room be the previous one or a newly generated one?")]
     public bool backDoorToPreviousRoom = true;
     public bool oldRoomGenerator = true;
+    public bool debugGenerator = false;
 
     [Header("Layout")]
-    public LayoutType type = LayoutType.arcs;
-    public bool useOnlyVertices = false;
+    public LayoutType type = LayoutType.straights;
+    public bool useOnlyVertices = true;
     public bool invertAfterEachPoint = true;
     [Range(1,100)]
     public int bezierSubdivisions = 10;
@@ -50,8 +51,8 @@ public class RoomGeneratorOptions : MonoBehaviour
 
     [Header("Display")]
     public bool showGeneralLayoutRooms = false;
-    public bool showBigRoom = true;
-    public bool showSamplePoints = true;
+    public bool showBigRoom = false;
+    public bool showSamplePoints = false;
     public bool showVertexNumbers = false;
     public bool showSamplePointNumbers = false;
     public bool showFinishedRoom = true;
@@ -62,6 +63,9 @@ public class RoomGeneratorOptions : MonoBehaviour
     [Range(0,5f)]
     public float doorArea = 0.5f;
     public bool renderNextRoomsAlready = false;
+    [Tooltip("How many rooms forward should be tested whether a room is visible or not (how many doors in a row can be visible)")]
+    public int depthForward = 3;
+
 
     public Material roomMaterial;
 }

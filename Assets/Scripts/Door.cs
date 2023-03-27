@@ -21,6 +21,7 @@ public class Door : MonoBehaviour
     {
         roomSegment = segment;
         previousNode = prev;
+        gameObject.layer = previousNode.LayerNumber;
         this.position = position;
         onCollisionEnter = callback;
         this.doorArea = doorArea;

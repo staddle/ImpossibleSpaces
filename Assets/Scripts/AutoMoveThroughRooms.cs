@@ -38,7 +38,7 @@ public class AutoMoveThroughRooms : MonoBehaviour
 
     public void triggeredDoor(Door door)
     {
-        if (door == this.door) return; // as expected
+        if (door == this.door || !this.enabled) return; // as expected
         else resetProgress(creator.CurrentRoom); //unexpectedly walked through other door
     }
 
