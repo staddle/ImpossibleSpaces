@@ -47,7 +47,7 @@ namespace Assets.Scripts
 
         public bool isOnEdge(Vector2 point)
         {
-            for(int i=0; i<4; i++)
+            for(int i=0; i<vertices.Count; i++)
             {
                 if(isOnSpecificEdge(point, i))
                     return true;
@@ -57,7 +57,7 @@ namespace Assets.Scripts
 
         public bool isOnSpecificEdge(Vector2 C, int edgeIndex)
         {
-            return isPointOnLine(C, vertices[edgeIndex], vertices[(edgeIndex + 1) % 4]);
+            return isPointOnLine(C, vertices[edgeIndex], vertices[(edgeIndex + 1) % vertices.Count]);
         }
 
         // as per https://stackoverflow.com/a/11912171

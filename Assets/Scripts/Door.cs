@@ -17,15 +17,19 @@ public class Door : MonoBehaviour
     private float doorHeight, doorArea;
  
 
-    public void setupDoor(RoomSegment segment, Node prev, Vector3 position, float doorHeight, float doorArea, OnCollisionEnterDel callback)
+    public void setupDoor(RoomSegment segment, Node prev, Vector3 position, float doorHeight, float doorArea, float doorWidth, OnCollisionEnterDel callback, bool skipLayer = false)
     {
         roomSegment = segment;
         previousNode = prev;
-        gameObject.layer = previousNode.LayerNumber;
+        if(!skipLayer)
+            gameObject.layer = previousNode.LayerNumber;
         this.position = position;
         onCollisionEnter = callback;
         this.doorArea = doorArea;
         this.doorHeight = doorHeight;
+        var doorDirection = LayoutCreator.Vector2At(segment.endPoint - segment.startPoint, 0).normalized;
+        point1 = position - doorDirection * doorWidth / 2;
+        point2 = position + doorDirection * doorWidth / 2;
     }
 
     public Vector2 getPosition()

@@ -952,7 +952,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 920663875}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.6086757, y: -16.210104, z: 3.360774}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1663,11 +1663,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roomGeneratorOptions: {fileID: 0}
   testRoom: 0
-  testRoomVertices:
-  - {x: 0, y: 0}
-  - {x: 5, y: 0}
-  - {x: 5, y: 5}
-  - {x: 0, y: 5}
   autoMove: {fileID: 0}
   generationAlgorithm: {fileID: 0}
   switchedRoom: 0
@@ -1730,11 +1725,19 @@ MonoBehaviour:
   showSamplePointNumbers: 0
   showFinishedRoom: 1
   showBezierTangents: 0
+  useSegments: 0
+  useCeilings: 0
   playerTransform: {fileID: 1725982594}
   doorArea: 0.5
   renderNextRoomsAlready: 0
   depthForward: 3
   roomMaterial: {fileID: 2100000, guid: 730fef78c605be340ba1205c15db3005, type: 2}
+  wallSegmentPrefab: {fileID: 7013866598849259720, guid: 6cf99ee53b675c941906ad350e8727d1,
+    type: 3}
+  ceilingPrefab: {fileID: 2027386964519189309, guid: ae340b89ae4e4934b83d7551ef6a9003,
+    type: 3}
+  doorPrefab: {fileID: 1388734021381784537, guid: c64c0640f195d184fb2c399227bc63c8,
+    type: 3}
 --- !u!1001 &1934505122
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -10,12 +10,12 @@ namespace Assets.Scripts
     {
         public Node currentRoom;
 
-        public abstract void init(RoomGeneratorOptions options, bool testRoom = false, List<Vector2> testRoomVertices = null);
+        public abstract void init(RoomGeneratorOptions options, bool testRoom = false, List<Vector2[]> testRoomVertices = null);
         public abstract void movedThroughDoor(Door door);
         public abstract void redraw(RoomDebug roomDebug, RoomGeneratorOptions options);
 
         protected static Node createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, Node previousRoom, Door previousDoor, List<Node> noOverlapRooms,
-            RoomGeneratorOptions options, List<Vector2> testVertices = null)
+            RoomGeneratorOptions options, Vector2[] testVertices = null)
         {
             /* Steps:
                 0. Have Starting Point
@@ -30,7 +30,7 @@ namespace Assets.Scripts
             if (testVertices == null)
             {
                 float minimumWidth = options.doorWidth; //first room wall (with door back) should at least contain the door -> be broad enough to fit th edoor
-                GeneralLayoutRoom prevRoom = createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, minimumWidth, noOverlapRooms, options, testVertices);
+                GeneralLayoutRoom prevRoom = createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, minimumWidth, true, noOverlapRooms, options);
                 if(prevRoom == null)
                 {
                     return null;
@@ -42,7 +42,7 @@ namespace Assets.Scripts
                 {
                     if (i < options.minimumRoomSize || random.NextDouble() < Math.Pow(options.probabilityOfNextRoom * options.probabilityMultiplierPerNextRoom, i - options.minimumRoomSize))
                     {
-                        if (createNextRandomGeneralLayoutRoom(prevRoom, previousDoor, noOverlapRooms, options, out prevRoom, testVertices))
+                        if (createNextRandomGeneralLayoutRoom(prevRoom, previousDoor, noOverlapRooms, options, out prevRoom))
                         {
                             generalLayoutRooms.AddLast(prevRoom);
                         }
@@ -59,14 +59,14 @@ namespace Assets.Scripts
             }
             else
             {
-                generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, 0, noOverlapRooms, options, testVertices));
+                generalLayoutRooms.AddLast(createRandomGeneralLayoutRoom(startingPoint, firstRhythmDirection, 0, false, noOverlapRooms, options, testVertices));
             }
 
-            return createRandomRoomInternal(generalLayoutRooms, previousRoom, previousDoor, options);
+            return createRandomRoomInternal(generalLayoutRooms, previousRoom, previousDoor, options, noOverlapRooms);
         }
 
         // to debug creation of bigRoom
-        protected static Node createRandomRoomInternal(LinkedList<GeneralLayoutRoom> generalLayoutRooms, Node previousRoom, Door previousDoor, RoomGeneratorOptions options)
+        protected static Node createRandomRoomInternal(LinkedList<GeneralLayoutRoom> generalLayoutRooms, Node previousRoom, Door previousDoor, RoomGeneratorOptions options, List<Node> noOverlapRooms)
         {
             // create one big room from generalLayoutRooms
             GeneralLayoutRoom bigRoom = createBigRoom(generalLayoutRooms);
@@ -92,7 +92,7 @@ namespace Assets.Scripts
             RoomDebugs.Add(room, debug);
 
             // generate doors
-            room.generateDoors();
+            room.generateDoors(noOverlapRooms);
 
             // draw mesh
             room.createMesh(options.playAreaWallHeight, options.roomMaterial);
@@ -245,7 +245,7 @@ namespace Assets.Scripts
         }
 
         private static bool createNextRandomGeneralLayoutRoom(GeneralLayoutRoom previousRoom, Door previousDoor, List<Node> noOverlapRooms, RoomGeneratorOptions options,
-            out GeneralLayoutRoom nextRoom, List<Vector2> testRoomVertices = null)
+            out GeneralLayoutRoom nextRoom)
         {
             (Vector2 nextStartingPoint, Vector2 nextRhythmDirection) = getPointOnRoomEdge(previousRoom, previousDoor == null ? null : previousDoor.getPosition());
             nextRoom = null;
@@ -269,11 +269,11 @@ namespace Assets.Scripts
                 return false;
             }
 
-            nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, 0, noOverlapRooms, options, testRoomVertices);
+            nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, 0, false, noOverlapRooms, options);
             return true;
         }
 
-        private static GeneralLayoutRoom createRandomGeneralLayoutRoom(Vector2 startingPoint, Vector2 rhythmDirection, float minimumWidth, List<Node> noOverlapRooms, RoomGeneratorOptions options, List<Vector2> testRoomVertices = null)
+        public static GeneralLayoutRoom createRandomGeneralLayoutRoom(Vector2 startingPoint, Vector2 rhythmDirection, float minimumWidth, bool isFirstGLR, List<Node> noOverlapRooms, RoomGeneratorOptions options, Vector2[] testRoomVertices = null)
         {
             System.Random random = new System.Random();
             Vector2 point1, point2, point3, point4, rhythmDirectionPerpendicular;
@@ -317,8 +317,9 @@ namespace Assets.Scripts
 
             bool sPNotOverlaps = handleOverlapRooms(out newPoint1, newPoint1, startingPoint, noOverlapRooms);
             sPNotOverlaps = sPNotOverlaps && handleOverlapRooms(out newPoint2, newPoint2, startingPoint, noOverlapRooms);
-            if(!sPNotOverlaps)
+            if(!sPNotOverlaps && !isFirstGLR)
             {
+                Debug.LogError("Starting point already inside other room");
                 return null; //starting point is already inside some other room -> cant generate room here
             }
 
@@ -346,8 +347,9 @@ namespace Assets.Scripts
             Vector2 newPoint3 = handlePointOutside(point3, rhythmDirection);
             Vector2 newPoint4 = handlePointOutside(point4, rhythmDirection);
 
-            bool a = handleOverlapRooms(out Vector2 newPoint31, newPoint3, startingPoint + rhythmDirection * depth, noOverlapRooms);
-            bool b = handleOverlapRooms(out Vector2 newPoint41, newPoint4, startingPoint + rhythmDirection * depth, noOverlapRooms);
+            var startingPoint34 = handlePointOutside(startingPoint + rhythmDirection * depth, rhythmDirection);
+            bool a = handleOverlapRooms(out Vector2 newPoint31, newPoint3, startingPoint34, noOverlapRooms);
+            bool b = handleOverlapRooms(out Vector2 newPoint41, newPoint4, startingPoint34, noOverlapRooms);
             newPoint3 = newPoint31;
             newPoint4 = newPoint41;
 
@@ -356,7 +358,7 @@ namespace Assets.Scripts
             if (!a) //startingPoint + depth is inside another room -> reduce depth
             {
                 // get new depth by getting intersection point of starting point and room's edge
-                handleOverlapRooms(out Vector2 newDepthPoint, startingPoint + rhythmDirection * depth, startingPoint, noOverlapRooms);
+                handleOverlapRooms(out Vector2 newDepthPoint, startingPoint34, startingPoint, noOverlapRooms);
                 float newDepth = (newDepthPoint - startingPoint).magnitude;
                 newPoint3 = point2 + rhythmDirection * newDepth;
                 newPoint4 = point1 + rhythmDirection * newDepth;
@@ -412,6 +414,75 @@ namespace Assets.Scripts
             // what if not go "back" with points 3 and 4 but change width of room (move point 1 and 4 instead of move point 3 and 4)
 
             return new GeneralLayoutRoom(new List<Vector2>() { point1, point2, point3, point4 });
+        }
+
+        public static Vector2 handlePointOutside(Vector2 point, Vector2 direction)
+        {
+            Vector2 pA = playArea.vertices[2];
+            if (point.x < 0)
+            {
+                // calculate crossing point of playarea and room area
+                if (LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), Vector3.zero, new Vector3(0, 0, pA.y)))
+                    point = new(intersection.x, intersection.z);
+            }
+            if (point.y < 0)
+            {
+                if (LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), Vector3.zero, new Vector3(pA.x, 0, 0)))
+                    point = new(intersection.x, intersection.z);
+            }
+            if (point.x > pA.x)
+            {
+                if (LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), new Vector3(pA.x, 0, pA.y), new Vector3(0, 0, -pA.y)))
+                    point = new(intersection.x, intersection.z);
+            }
+            if (point.y > pA.y)
+            {
+                if (LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), new Vector3(pA.x, 0, pA.y), new Vector3(-pA.x, 0, 0)))
+                    point = new(intersection.x, intersection.z);
+            }
+
+            return point;
+        }
+
+        public static bool handleOverlapRooms(out Vector2 newPoint, Vector2 point, Vector2 startingPoint, List<Node> noOverlapRooms)
+        {
+            bool ret = true;
+            var oldPoint = point;
+            foreach (var node in noOverlapRooms)
+            {
+                GeneralLayoutRoom bigRoom = node.roomDebug.bigRoom;
+                //TODO: still not handling when two points are both outside of another room but the line between them passes through the room (intersection?)
+                foreach(var segment in node.segments)
+                {
+                    if (LineLineIntersection(out Vector2 intersection, startingPoint, point, segment.startPoint, segment.endPoint))
+                    {
+                        if ((intersection - startingPoint).magnitude < (point - startingPoint).magnitude)
+                        {
+                            point = intersection;
+                        }
+                    }
+                }
+                if (bigRoom.isInside(point) /*|| bigRoom.isOnEdge(point)*/)
+                {
+                    if (bigRoom.isInside(startingPoint) || bigRoom.isOnEdge(startingPoint))
+                        ret = false;
+                    for (int i = 0, j = bigRoom.numberOfEdges - 1; i < bigRoom.numberOfEdges; j = i++)
+                    {
+                        if (LineLineIntersection(out Vector2 intersection, point, startingPoint, bigRoom.vertices[i], bigRoom.vertices[j]))
+                        {
+                            //if intersection is closer to starting point than point (which was inside bigRoom)
+                            if ((intersection - startingPoint).magnitude < (point - startingPoint).magnitude)
+                            {
+                                point = intersection;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            newPoint = point;
+            //if (!oldPoint.Equals(newPoint)) Debug.Log(point + " - " + newPoint);
+            return ret;
         }
     }
 }

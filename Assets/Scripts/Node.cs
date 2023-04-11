@@ -1,5 +1,8 @@
+using Assets.Scripts;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using static LayoutCreator;
 
@@ -30,9 +33,10 @@ public class Node : MonoBehaviour
         {
             GameObject doorGO = new GameObject("Door 0");
             doorGO.transform.parent = transform;
+            doorGO.transform.position = previousDoor.position;
             doorGO.layer = previousNode.LayerNumber;
             Door door = doorGO.AddComponent<Door>();
-            door.setupDoor(segments.First.Value, this, previousDoor.position, options.doorHeight, options.doorArea, onCollisionEnter);
+            door.setupDoor(segments.First.Value, this, previousDoor.position, options.doorHeight, options.doorArea, options.doorWidth, onCollisionEnter, true);
             door.nextNode = previousNode;
             doors.Add(door);
         }
@@ -57,12 +61,12 @@ public class Node : MonoBehaviour
         doors.ForEach(door => door.gameObject.SetActive(active));
     }
 
-    public void generateDoors()
+    public void generateDoors(List<Node> visibleRooms)
     {
         int numberOfDoors = random.Next(options.minNumberOfDoorsPerRoom, options.maxNumberOfDoorsPerRoom);
 
         List<RoomSegment> segmentsThatAllowDoors = segments.Where(s => 
-            s.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, playArea) &&
+            s.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, playArea, visibleRooms) &&
             doors.Where(x => x.roomSegment == s).Count() == 0).ToList(); //disallow multiple doors per segment (TODO)
         if(segmentsThatAllowDoors.Count == 0)
         {
@@ -74,11 +78,28 @@ public class Node : MonoBehaviour
             RoomSegment segment = segmentsThatAllowDoors[random.Next(0, segmentsThatAllowDoors.Count)];
             segmentsThatAllowDoors.Remove(segment); //same segment can't have another door
             GameObject doorGO = new GameObject("Door "+(i+1));
+            var position = Vector2At(segment.getRandomDoorLocation(options), 0);
             doorGO.transform.parent = transform;
+            doorGO.transform.position = position;
             Door door = doorGO.AddComponent<Door>();
-            door.setupDoor(segment, this, Vector2At(segment.getRandomDoorLocation(options), 0), options.doorHeight, options.doorArea, onCollisionEnter);
+            door.setupDoor(segment, this, position, options.doorHeight, options.doorArea, options.doorWidth, onCollisionEnter);
             doors.Add(door);
         }
+    }
+
+    private List<Tuple<Vector2, float>> addToWallLocations(List<Tuple<Vector2, float>> wallLocations, Vector2 startPoint, Vector3 endPoint, Vector2 direction)
+    {
+        float dist = (endPoint - Vector2At(startPoint, 0)).magnitude;
+        for (int p = 0; p < (int)dist; p++)
+        {
+            wallLocations.Add(new Tuple<Vector2, float>(startPoint + direction.normalized * p, 1));
+        }
+        float rest = dist - (int)dist;
+        if (rest > 0)
+        {
+            wallLocations.Add(new Tuple<Vector2, float>(startPoint + direction.normalized * (int)dist, rest));
+        }
+        return wallLocations;
     }
 
     public void createMesh(float wallHeight, Material material)
@@ -88,6 +109,86 @@ public class Node : MonoBehaviour
             Debug.LogError("No room segments found to generate mesh with");
             return;
         }
+        //segments approach
+        if (options.useSegments)
+        {
+            Debug.Log(roomDebug.bigRoom.vertices.ToArray().ToSeparatedString(" - "));
+            for (int i = 0; i < segments.Count; i++)
+            {
+                RoomSegment segment = segments.ElementAt(i);
+                List<Door> doorOnSegment = doors.Where(x => x.roomSegment == segment).ToList();
+                var direction = segment.endPoint - segment.startPoint;
+                var angle = Vector2.Angle(direction, Vector2.right);
+                float sign = Mathf.Sign(Vector3.Dot(Vector3.down, Vector3.Cross(Vector2At(direction, 0), Vector2At(Vector2.right, 0))));
+                float angle360 = angle * sign;
+                List<Tuple<Vector2, float>> wallLocations = new List<Tuple<Vector2, float>>();
+                Vector2 iPoint = segment.startPoint;
+
+                foreach (Door door in doorOnSegment)
+                {
+                    wallLocations = addToWallLocations(wallLocations, iPoint, door.point1, direction);
+                    GameObject doorGO = Instantiate(options.doorPrefab, transform);
+                    doorGO.transform.position = door.point1;
+                    doorGO.transform.rotation = Quaternion.Euler(0, angle360, 0);
+                    doorGO.transform.GetChild(0).gameObject.layer = LayerNumber;
+                    iPoint = door.getPoint2();
+                }
+                wallLocations = addToWallLocations(wallLocations, iPoint, Vector2At(segment.endPoint,0), direction);
+
+                foreach (var loc in wallLocations)
+                {
+                    GameObject wall = Instantiate(options.wallSegmentPrefab, transform);
+                    wall.transform.position = Vector2At(loc.Item1, 0);
+                    wall.transform.rotation = Quaternion.Euler(0, angle360, 0);
+                    wall.transform.localScale = new Vector3(loc.Item2, 1, 1);
+                    wall.transform.GetChild(0).gameObject.layer = LayerNumber;
+                }
+            }
+
+            // ceiling
+            if (!options.useCeilings) return;
+            var firstSegment = segments.ElementAt(0); 
+            var point = firstSegment.startPoint;
+            bool keepGoing = true;
+            GameObject ceiling = options.ceilingPrefab;
+            /*int pointIndex = 0;
+            Vector2[] getPoint = new Vector2[4] { new(0, 0), new(1, 0), new(1, 1), new(0, 1) };
+            int[] getRotation = new int[4] { 180, 270, 0, 90 };
+            while(keepGoing)
+            {
+                GameObject ceil = Instantiate(ceiling, transform);
+                ceil.transform.position = Vector2At(point, wallHeight);
+                for (int i = 0; i < 4; i++)
+                {
+                    pointIndex = (pointIndex + 1) % 4;
+                    if (roomDebug.bigRoom.isInside(getPoint[pointIndex]) || roomDebug.bigRoom.isOnEdge(getPoint[pointIndex]))
+                    {
+                        point = getPoint[(pointIndex - 1) % 4];
+                        break;
+                    }
+                }
+            }*/
+            foreach(GeneralLayoutRoom room in roomDebug.generalLayoutRooms)
+            {
+                if (room == null) continue;
+                if (room.vertices.Count != 4) continue;
+
+                int cols = (int)Math.Ceiling((room.vertices[1] - room.vertices[0]).magnitude);
+                int rows = (int)Math.Ceiling((room.vertices[2] - room.vertices[1]).magnitude);
+
+                var startPoint = room.vertices[0];
+                for(int i = 0; i < cols; i++)
+                {
+                    for(int j = 0; j < rows; j++)
+                    {
+                        GameObject ceil = Instantiate(ceiling, transform);
+                        ceil.transform.position = Vector2At(startPoint + new Vector2(i, j), wallHeight);
+                    }
+                }
+            }
+        }
+        
+        //old full mesh generation approach
         var hasMeshFilter = gameObject.TryGetComponent(out meshFilter);
         if(!hasMeshFilter)
         {
@@ -134,14 +235,10 @@ public class Node : MonoBehaviour
                     vertices[1] = vertices[0] + Vector3.up * wallHeight;
                     vertices[3] = new Vector3(straight.endPoint.x, 0, straight.endPoint.y);
                     vertices[2] = vertices[3] + Vector3.up * wallHeight;
-                    Vector3 doorDirection = (vertices[3] - vertices[0]).normalized;
-                    Vector3 doorMiddlePoint = doorOnSegment[0].position;
-                    vertices[7] = doorMiddlePoint - doorDirection * options.doorWidth / 2;
-                    vertices[4] = doorMiddlePoint + doorDirection * options.doorWidth / 2;
+                    vertices[7] = doorOnSegment[0].point1;
+                    vertices[4] = doorOnSegment[0].point2;
                     vertices[5] = vertices[4] + Vector3.up * options.doorHeight;
                     vertices[6] = vertices[7] + Vector3.up * options.doorHeight;
-                    doorOnSegment[0].point1 = vertices[7];
-                    doorOnSegment[0].point2 = vertices[4];
 
                     List<int> triangles = new List<int>() { 0, 1, 6,
                                                             6, 7, 0,

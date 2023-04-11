@@ -49,7 +49,7 @@ public class LayoutCreatorEditor : Editor
                 }
             bool testRoom = EditorGUILayout.Toggle("Test Room", layoutCreator.testRoom);
             layoutCreator.testRoom = testRoom;
-            if(layoutCreator.testRoomVertices.Count != 4) 
+            /*if(layoutCreator.testRoomVertices.Count != 4) 
                 layoutCreator.testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
             if (testRoom)
             {
@@ -59,17 +59,12 @@ public class LayoutCreatorEditor : Editor
                     {
                         using(new EditorGUILayout.HorizontalScope())
                         {
-                            /*EditorGUILayout.LabelField("Vertex " + i);
-                            float x = FloatField("X", layoutCreator.testRoomVertices[i].x);
-                            float y = FloatField("Y", layoutCreator.testRoomVertices[i].y);
-                            layoutCreator.testRoomVertices[i] = new(x, y);
-                            */
                             layoutCreator.testRoomVertices[i] = EditorGUILayout.Vector2Field("Vertex " + i, layoutCreator.testRoomVertices[i]);
                         }
                     }
                 }
-            }
-            if(layoutCreator.CurrentRoom != null)
+            }*/
+            if (layoutCreator.CurrentRoom != null)
             {
                 segmentsFoldOut = EditorGUILayout.Foldout(segmentsFoldOut, "RoomSegments");
                 if(segmentsFoldOut)

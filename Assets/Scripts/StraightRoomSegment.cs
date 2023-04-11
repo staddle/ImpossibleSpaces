@@ -1,5 +1,7 @@
 using Assets.Scripts;
+using Oculus.Platform.Samples.VrHoops;
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,12 +12,27 @@ public class StraightRoomSegment : RoomSegment
 
     }
 
-    public override bool canContainDoor(float doorWidth, float lengthInRhythmDirectionWherePlayAreaCannotEnd, GeneralLayoutRoom playArea)
+    public override bool canContainDoor(float doorWidth, float lengthInRhythmDirectionWherePlayAreaCannotEnd, GeneralLayoutRoom playArea, List<Node> otherRooms)
     {
         bool isEnoughWidth = Math.Abs(Vector2.Distance(endPoint, startPoint)) >= doorWidth;
         bool isEnoughSpace = isEnoughSpaceForAnotherRoom(playArea, lengthInRhythmDirectionWherePlayAreaCannotEnd);
+        bool isNoOverlapRoomInWay = isOtherRoomInTheWay(otherRooms, lengthInRhythmDirectionWherePlayAreaCannotEnd);
 
-        return isEnoughSpace && isEnoughWidth;
+        return isEnoughSpace && isEnoughWidth && isNoOverlapRoomInWay;
+    }
+
+    private bool isOtherRoomInTheWay(List<Node> otherRooms, float lengthInRhythmDirectionWherePlayAreaCannotEnd)
+    {
+        bool i = true;
+        foreach (Node room in otherRooms)
+        {
+            if (room == null) continue;
+            var bigRoom = room.roomDebug.bigRoom;
+            var outDirection = getOutwardDirection();
+            i = i && !(bigRoom.isInside(startPoint + outDirection * lengthInRhythmDirectionWherePlayAreaCannotEnd) &&
+                bigRoom.isInside(endPoint + outDirection * lengthInRhythmDirectionWherePlayAreaCannotEnd));
+        }
+        return i;
     }
 
     public override Vector2 getRandomDoorLocation(RoomGeneratorOptions options)

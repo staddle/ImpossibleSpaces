@@ -57,6 +57,8 @@ public class RoomGeneratorOptions : MonoBehaviour
     public bool showSamplePointNumbers = false;
     public bool showFinishedRoom = true;
     public bool showBezierTangents = false;
+    public bool useSegments = false;
+    public bool useCeilings = false;
 
     [Header("Gameplay")]
     public Transform playerTransform;
@@ -68,6 +70,9 @@ public class RoomGeneratorOptions : MonoBehaviour
 
 
     public Material roomMaterial;
+    public GameObject wallSegmentPrefab;
+    public GameObject ceilingPrefab;
+    public GameObject doorPrefab;
 }
 
 public enum LayoutType {

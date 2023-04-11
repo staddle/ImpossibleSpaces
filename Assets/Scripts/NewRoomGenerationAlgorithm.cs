@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
 using static LayoutCreator;
 
 namespace Assets.Scripts
@@ -10,9 +8,10 @@ namespace Assets.Scripts
     public class NewRoomGenerationAlgorithm : AbstractRoomGenerationAlgorithm
     {
         private List<Node> currentlyShownRooms = new List<Node>();
-        private List<Tuple<Vector3, Vector3>> raycasts = new List<Tuple<Vector3, Vector3>>();
+        private List<Tuple<Vector3, Vector3, bool>> raycasts = new List<Tuple<Vector3, Vector3, bool>>();
         private Transform playerTransform;
         private RoomGeneratorOptions options;
+        private List<Vector2[]> testRooms;
 
         // Update is called once per frame
         void Update()
@@ -23,33 +22,37 @@ namespace Assets.Scripts
             {
                 Node node = currentlyShownRooms[i];
                 bool isVisible = false;
-                foreach(Door door in node.doors)
+                var doorsCopy = new List<Door>(node.doors);
+                foreach(Door door in doorsCopy)
                 {
                     bool doorVisible = isDoorVisible(door);
                     if (doorVisible)
                     {
+                        var roomGenerated = true;
                         if(door.nextNode == null)
-                            createRoomForDoor(door);
-                        if(!currentlyShownRooms.Contains(door.nextNode))
+                            roomGenerated = createRoomForDoor(door);
+                        if(roomGenerated && !currentlyShownRooms.Contains(door.nextNode))
                         {
                             setActiveRoom(door.nextNode, true);
                         }
+                        isVisible = true;
                     } 
-                    isVisible = isVisible || doorVisible;
                 }
-                if (!isVisible)
+                if (!isVisible && !node.Equals(currentRoom))
                     setActiveRoom(node, false);
             }
         }
 
-        public override void init(RoomGeneratorOptions options, bool testRoom = false, List<Vector2> testRoomVertices = null)
+        public override void init(RoomGeneratorOptions options, bool testRoom = false, List<Vector2[]> testRoomVertices = null)
         {
             this.options = options;
             currentlyShownRooms = new List<Node>();
             playerTransform = options.playerTransform;
-            currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, currentlyShownRooms, options, testRoom ? testRoomVertices : null);
+            currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, currentlyShownRooms, options, testRoom ? testRoomVertices[0] : null);
+            if (testRoom)
+                testRooms = testRoomVertices;
             setActiveRoom(currentRoom, true);
-            createNextRooms(currentRoom);
+            //createNextRooms(currentRoom);
         }
 
         private void createNextRooms(Node currentRoom)
@@ -63,10 +66,11 @@ namespace Assets.Scripts
             }
         }
 
-        private void createRoomForDoor(Door door)
+        private bool createRoomForDoor(Door door)
         {
             Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-            door.nextNode = createRandomRoom(new Vector2(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, currentRoom, door, currentlyShownRooms, options);
+            door.nextNode = createRandomRoom(new Vector2(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, currentRoom, door, currentlyShownRooms, options, 
+                testRooms != null && testRooms.Count < door.previousNode.depth + 1 ? testRooms[door.previousNode.depth+1] : null);
             if(door.nextNode == null)
             {
                 Node node = door.previousNode;
@@ -74,26 +78,44 @@ namespace Assets.Scripts
                 door.previousNode.doors.Remove(door);
                 Destroy(door);
                 node.createMesh(options.playAreaWallHeight, options.roomMaterial);
+                return false;
             }
+            return true;
         }
 
         private void setActiveRoom(Node room, bool active)
         {
+            if (room == null)
+            {
+                Debug.LogError("setActiveRoom: room was null??");
+                return;
+            }
             room.gameObject.SetActive(active);
-            if(active) 
+            if(active)
                 currentlyShownRooms.Add(room);
-            else 
+            else if(!room.Equals(currentRoom))
                 currentlyShownRooms.Remove(room);
         }
 
         private bool isDoorVisible(Door door)
         {
             Vector3 position = playerTransform.position;
-            List<Vector3> directions = new List<Vector3> { door.point1 - position, door.point2 - position, door.position - position };
+            Vector3 toMiddle = (door.point2 - door.point1).normalized;
+            List<Vector3> directions = new List<Vector3> { door.position - position, door.point1 - position + toMiddle * 0.01f, door.point2 - position - toMiddle * 0.01f };
+            directions.ForEach(x => x.Normalize());
             float maxDistance = (float) Math.Sqrt(Math.Pow(options.playArea.x, 2) + Math.Pow(options.playArea.y,2));
             foreach (Vector3 direction in directions)
             {
-                for(int i = currentRoom.LayerNumber; i<currentRoom.LayerNumber+options.depthForward; i++)
+                /*if (Physics.Raycast(position, direction, out RaycastHit hit, maxDistance))
+                {
+                    //hit with wall?
+                    if(hit.transform.parent != null && hit.transform.parent.gameObject.name == "PlayArea")
+                    {
+                        raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
+                        return true;
+                    }
+                }*/
+                for (int i = currentRoom.LayerNumber; i<currentRoom.LayerNumber+options.depthForward; i++)
                 {
                     DoorHit doorHit = hittingDoorAtDepth(door, i, position, direction, maxDistance);
                     if (doorHit == DoorHit.CORRECT_DOOR)
@@ -121,7 +143,6 @@ namespace Assets.Scripts
             int depthMask = 1 << depth;
             if (Physics.Raycast(position, direction, out RaycastHit hit, maxDistance, depthMask))
             {
-                raycasts.Add(new Tuple<Vector3, Vector3>(position, hit.point));
                 Door respectiveDoor = null;
                 if (door.nextNode != null)
                     respectiveDoor = door.nextNode.doors.Find(x => x.position == door.position);
@@ -129,18 +150,22 @@ namespace Assets.Scripts
                 if (hit.transform == door.transform || (respectiveDoor != null && hit.transform == respectiveDoor.transform))
                 {
                     //Debug.Log("Door is visible");
+                    raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
                     return DoorHit.CORRECT_DOOR;
                 } 
                 else if(hit.transform.gameObject.GetComponent<Door>() != null)
                 {
+                    raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
                     return DoorHit.OTHER_DOOR;
                 }
+                raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
             }
             return DoorHit.WALLS;
         }
 
         public override void movedThroughDoor(Door door)
         {
+            Debug.Log("Moved through door " + door.name + " to room " + door.nextNode.name);
             currentRoom.setAllDoorsActive(false);
             currentRoom = door.nextNode;
             currentRoom.setAllDoorsActive(true);
@@ -156,9 +181,12 @@ namespace Assets.Scripts
         {
             if (currentRoom != null && options.debugGenerator)   
             {
-                Gizmos.color = Color.red;
                 foreach(var raycast in raycasts)
                 {
+                    if(raycast.Item3)
+                        Gizmos.color = Color.yellow;
+                    else 
+                        Gizmos.color = Color.red;
                     Gizmos.DrawLine(raycast.Item1, raycast.Item2);
                 }
             }

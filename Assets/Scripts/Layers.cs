@@ -45,7 +45,7 @@ public class Layers
                 {
                     // Assign string value to layer
                     sp.stringValue = layerName;
-                    Debug.Log("Layer: " + layerName + " has been added");
+                    //Debug.Log("Layer: " + layerName + " has been added");
                     // Save settings
                     tagManager.ApplyModifiedProperties();
                     return true;

@@ -1,11 +1,12 @@
 using Assets.Scripts;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class RoomSegment
 {
     public Vector2 startPoint, endPoint;
     public Color color = Color.black;
-    public float width = 0f;
+    public float width { get{ return (endPoint - startPoint).magnitude; } }
 
     public RoomSegment(Vector2 startPoint, Vector2 endPoint)
     {
@@ -18,7 +19,7 @@ public class RoomSegment
         Debug.LogError("not implemented");
     }
 #endif
-    public virtual bool canContainDoor(float doorWidth, float lengthInRhythmDirectionWherePlayAreaCannotEnd, GeneralLayoutRoom playArea)
+    public virtual bool canContainDoor(float doorWidth, float lengthInRhythmDirectionWherePlayAreaCannotEnd, GeneralLayoutRoom playArea, List<Node> visibleRooms)
     {
         return false;
     }

@@ -1,6 +1,7 @@
 using Assets.Scripts;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,8 +9,13 @@ public partial class LayoutCreator : MonoBehaviour
 {
     public static GeneralLayoutRoom playArea;
     public RoomGeneratorOptions roomGeneratorOptions;
-    public bool testRoom = false;
-    public List<Vector2> testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
+    public bool testRoom = true;
+    //public List<Vector2> testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
+    public List<Vector2[]> testRoomsVertices = new List<Vector2[]>
+    {
+        new Vector2[] { new(0,0), new(0,5), new(5,5), new(5,3), new(7,3), new(7,0) },
+        new Vector2[] { new(5,0), new(5,7), new(10,7), new(10,0)}
+    };
     public AutoMoveThroughRooms autoMove;
     public AbstractRoomGenerationAlgorithm generationAlgorithm;
     [HideInInspector]
@@ -30,7 +36,7 @@ public partial class LayoutCreator : MonoBehaviour
     void Start()
     {
         var layersGenerator = new Layers();
-        for(int i=1; i<=10; i++)
+        for (int i = 1; i <= 10; i++)
         {
             layersGenerator.AddNewLayer("RoomsLayer " + i);
         }
@@ -44,7 +50,7 @@ public partial class LayoutCreator : MonoBehaviour
         setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
 
         OldRoomGenerationAlgorithm oldRoomGenerationAlgorithm = GetComponent<OldRoomGenerationAlgorithm>();
-        if(oldRoomGenerationAlgorithm == null)
+        if (oldRoomGenerationAlgorithm == null)
             oldRoomGenerationAlgorithm = gameObject.AddComponent<OldRoomGenerationAlgorithm>();
         NewRoomGenerationAlgorithm newRoomGenerationAlgorithm = GetComponent<NewRoomGenerationAlgorithm>();
         if (newRoomGenerationAlgorithm == null)
@@ -54,7 +60,9 @@ public partial class LayoutCreator : MonoBehaviour
         else
             generationAlgorithm = newRoomGenerationAlgorithm;
 
-        generationAlgorithm.init(roomGeneratorOptions);
+        //test();
+
+        generationAlgorithm.init(roomGeneratorOptions, testRoom, testRoomsVertices);
     }
 
     // Update is called once per frame
@@ -78,6 +86,28 @@ public partial class LayoutCreator : MonoBehaviour
     public static Dictionary<Node, RoomDebug> RoomDebugs => roomDebugs;
     public Node CurrentRoom => generationAlgorithm.currentRoom;
 
+    private void test()
+    {
+        //createRandomGeneralLayoutRoom
+
+        var node = new Node();
+        var roomDebug = new RoomDebug(null, new GeneralLayoutRoom(new List<Vector2> { new(2f, 2f), new(5, 2), new(5, 5), new(2, 5) }), null);
+        var segments = fromVertices(roomDebug.bigRoom.vertices);
+        node.roomDebug = roomDebug;
+        var glr = AbstractRoomGenerationAlgorithm.createRandomGeneralLayoutRoom(new Vector2(5.5f, 3.5f), Vector2.up, 8f, false, new List<Node> { node }, roomGeneratorOptions);
+        Debug.Log(glr.vertices.ToCommaSeparatedString());
+    }
+
+    private LinkedList<RoomSegment> fromVertices(List<Vector2> vertices)
+    {
+        var segments = new LinkedList<RoomSegment>();
+        for(int i=0; i<vertices.Count; i++)
+        {
+            segments.AddLast(new RoomSegment(vertices[i], vertices[(i + 1) % vertices.Count]));
+        }
+        return segments;
+    }
+
     public void regenerateLayout()
     {
         if (playArea != null)
@@ -88,7 +118,7 @@ public partial class LayoutCreator : MonoBehaviour
                 Destroy(roomsParent.transform.GetChild(i).gameObject);
             }
             setUpPlayerPosition(roomGeneratorOptions.playerStartingPoint);
-            generationAlgorithm.init(roomGeneratorOptions);
+            generationAlgorithm.init(roomGeneratorOptions, testRoom, testRoomsVertices);
         }
     }
 
@@ -187,7 +217,7 @@ public partial class LayoutCreator : MonoBehaviour
         {
             wall.transform.parent = parentObject.transform;
             wall.transform.localScale = new Vector3(1.005f, 1, wallHeight / 10);
-            wall.GetComponent<MeshCollider>().enabled = false;
+            wall.GetComponent<MeshCollider>().enabled = true;
         }
 
         //build play area a bit bigger to stop z-fighting of room and play area
@@ -219,6 +249,11 @@ public partial class LayoutCreator : MonoBehaviour
     /// <returns></returns>
     public static (Vector2, Vector2) getPointOnRoomEdge(GeneralLayoutRoom room, Vector2? except = null)
     {
+        if(room == null)
+        {
+            Debug.LogError("room was null!");
+            return (Vector2.zero, Vector2.zero);
+        }
         System.Random random = new System.Random();
         int index = random.Next(0, room.numberOfEdges - 1);
         Vector2 point1 = room.vertices[index], point2 = room.vertices[(index + 1) % room.numberOfEdges];
@@ -249,63 +284,6 @@ public partial class LayoutCreator : MonoBehaviour
         return new Vector3(v2.x, y, v2.y);
     }
 
-    public static Vector2 handlePointOutside(Vector2 point, Vector2 direction)
-    {
-        Vector2 pA = playArea.vertices[2];
-        if (point.x < 0)
-        {
-            // calculate crossing point of playarea and room area
-            if(LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), Vector3.zero, new Vector3(0, 0, pA.y)))
-                point = new(intersection.x, intersection.z);
-        }
-        if(point.y < 0)
-        {
-            if(LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), Vector3.zero, new Vector3(pA.x, 0, 0)))
-                point = new(intersection.x, intersection.z);
-        }
-        if(point.x > pA.x)
-        {
-            if (LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), new Vector3(pA.x, 0, pA.y), new Vector3(0, 0, -pA.y)))
-                point = new(intersection.x, intersection.z);
-        }
-        if(point.y > pA.y)
-        {
-            if (LineLineIntersection(out Vector3 intersection, Vector2At(point, 0), Vector2At(direction, 0), new Vector3(pA.x, 0, pA.y), new Vector3(-pA.x, 0, 0)))
-                point = new(intersection.x, intersection.z);
-        }
-
-        return point;
-    }
-
-    public static bool handleOverlapRooms(out Vector2 newPoint, Vector2 point, Vector2 startingPoint, List<Node> noOverlapRooms)
-    {
-        bool ret = true;
-        var oldPoint = point;
-        foreach(var node in noOverlapRooms)
-        {
-            GeneralLayoutRoom bigRoom = node.roomDebug.bigRoom;
-            if (bigRoom.isInside(point) || bigRoom.isOnEdge(point))
-            {
-                if (bigRoom.isInside(startingPoint))
-                    ret = false;
-                for (int i = 0, j = bigRoom.numberOfEdges - 1; i < bigRoom.numberOfEdges; j = i++)
-                {
-                    if(LineLineIntersection(out Vector2 intersection, point, startingPoint - point, bigRoom.vertices[i], bigRoom.vertices[j] - bigRoom.vertices[i]))
-                    {
-                        if((intersection - point).magnitude < (startingPoint - point).magnitude)
-                        {
-                            point = intersection;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        newPoint = point;
-        if(!oldPoint.Equals(newPoint)) Debug.Log(point + " - " + newPoint);
-        return ret;
-    }
-
     // from https://stackoverflow.com/questions/59449628/check-when-two-vector3-lines-intersect-unity3d
     public static bool LineLineIntersection(out Vector3 intersection, Vector3 linePoint1,
         Vector3 lineVec1, Vector3 linePoint2, Vector3 lineVec2)
@@ -333,12 +311,33 @@ public partial class LayoutCreator : MonoBehaviour
         }
     }
 
-    public static bool LineLineIntersection(out Vector2 intersection, Vector2 linePoint1,
-        Vector2 lineVec1, Vector2 linePoint2, Vector2 lineVec2)
+    public static bool LineLineIntersection(out Vector2 intersectionV2, Vector2 a1V2,
+        Vector2 a2V2, Vector2 b1V2, Vector2 b2V2)
     {
-        bool result = LineLineIntersection(out Vector3 intersectionV3, Vector2At(linePoint1, 0), Vector2At(lineVec1, 0), Vector2At(linePoint2, 0), Vector2At(lineVec2, 0));
-        intersection = new(intersectionV3.x, intersectionV3.z);
-        return result;
+        Vector3 a1 = Vector2At(a1V2, 0), 
+                a2 = Vector2At(a2V2, 0),
+                b1 = Vector2At(b1V2, 0),
+                b2 = Vector2At(b2V2, 0),
+                aDiff = Vector2At(a2V2 - a1V2, 0), 
+                bDiff = Vector2At(b2V2 - b1V2, 0);
+        if (LineLineIntersection(out Vector3 intersection, a1, aDiff, b1, bDiff))
+        {
+            float aSqrMagnitude = aDiff.sqrMagnitude;
+            float bSqrMagnitude = bDiff.sqrMagnitude;
+
+            if ((intersection - a1).sqrMagnitude <= aSqrMagnitude
+                 && (intersection - a2).sqrMagnitude <= aSqrMagnitude
+                 && (intersection - b1).sqrMagnitude <= bSqrMagnitude
+                 && (intersection - b2).sqrMagnitude <= bSqrMagnitude)
+            {
+                // there is an intersection between the two segments and 
+                //   it is at intersection
+                intersectionV2 = new(intersection.x, intersection.z);
+                return true;
+            }
+        }
+        intersectionV2 = Vector2.zero;
+        return false;
     }
 
         public static float randomFloat(float min, float max)

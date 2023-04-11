@@ -7,16 +7,16 @@ namespace Assets.Scripts
     public class OldRoomGenerationAlgorithm : AbstractRoomGenerationAlgorithm
     {
 
-        public override void init(RoomGeneratorOptions options, bool testRoom = false, List<Vector2> testRoomVertices = null)
+        public override void init(RoomGeneratorOptions options, bool testRoom = false, List<Vector2[]> testRoomVertices = null)
         {
-            currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, new List<Node>(), options, testRoom ? testRoomVertices : null);
+            currentRoom = createRandomRoom(new Vector2(0, 0), Vector2.up, null, null, new List<Node>(), options, testRoom ? testRoomVertices[0] : null);
             currentRoom.gameObject.SetActive(true);
             setFollowingRooms(true);
         }
 
         public override void redraw(RoomDebug roomDebug, RoomGeneratorOptions options)
         {
-            createRandomRoomInternal(roomDebug.generalLayoutRooms, null, null, options);
+            createRandomRoomInternal(roomDebug.generalLayoutRooms, null, null, options, null);
         }
 
         private void setFollowingRooms(bool active)
