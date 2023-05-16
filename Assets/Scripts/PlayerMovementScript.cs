@@ -34,7 +34,7 @@ public class PlayerMovementScript : MonoBehaviour
             LookVR(m_LookVR);
         #endif
         Move(m_Move);
-        #if ENABLE_VR
+        /*#if ENABLE_VR
             OVRInput.Update();
             Vector2 primary = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick);
             if(!primary.Equals(Vector2.zero))
@@ -46,7 +46,7 @@ public class PlayerMovementScript : MonoBehaviour
             {   
                 m_LookVR = secondary;
             }
-        #endif
+        #endif*/
     }
 
     private void Move(Vector2 direction)

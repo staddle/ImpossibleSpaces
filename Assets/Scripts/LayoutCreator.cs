@@ -9,7 +9,7 @@ public partial class LayoutCreator : MonoBehaviour
 {
     public static GeneralLayoutRoom playArea;
     public RoomGeneratorOptions roomGeneratorOptions;
-    public bool testRoom = true;
+    public bool testRoom = false;
     //public List<Vector2> testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
     public List<Vector2[]> testRoomsVertices = new List<Vector2[]>
     {

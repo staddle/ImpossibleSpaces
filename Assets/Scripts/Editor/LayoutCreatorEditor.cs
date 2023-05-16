@@ -25,6 +25,8 @@ public class LayoutCreatorEditor : Editor
     {
         serializedObject.Update();
         EditorGUILayout.PropertyField(serializedObject.FindProperty("generationAlgorithm"));
+        bool testRoom = EditorGUILayout.Toggle("Test Room", layoutCreator.testRoom);
+        layoutCreator.testRoom = testRoom;
         if (layoutCreator.generationAlgorithm == null) return;
         using (new GUILayout.VerticalScope())
         {
@@ -47,8 +49,6 @@ public class LayoutCreatorEditor : Editor
                         }
                     }
                 }
-            bool testRoom = EditorGUILayout.Toggle("Test Room", layoutCreator.testRoom);
-            layoutCreator.testRoom = testRoom;
             /*if(layoutCreator.testRoomVertices.Count != 4) 
                 layoutCreator.testRoomVertices = new List<Vector2>() { new(), new(), new(), new() };
             if (testRoom)

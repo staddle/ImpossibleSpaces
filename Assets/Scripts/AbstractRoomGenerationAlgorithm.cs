@@ -14,6 +14,17 @@ namespace Assets.Scripts
         public abstract void movedThroughDoor(Door door);
         public abstract void redraw(RoomDebug roomDebug, RoomGeneratorOptions options);
 
+        /// <summary>
+        /// Given starting parameters and options, create a random room and return it
+        /// </summary>
+        /// <param name="startingPoint">The initial point from which the room is expanded</param>
+        /// <param name="firstRhythmDirection">The direction into which the room is to be expanded</param>
+        /// <param name="previousRoom">The previous <see cref="Node"/> from which the user came</param>
+        /// <param name="previousDoor">The previous <see cref="Door"/> from which the user came</param>
+        /// <param name="noOverlapRooms">Rooms that the newly generated room should not overlap with</param>
+        /// <param name="options">The options for generating rooms</param>
+        /// <param name="testVertices">When debugging, give vertices of a room that is to be created instead of a random room.</param>
+        /// <returns>The random room as a <see cref="Node"/></returns>
         protected static Node createRandomRoom(Vector2 startingPoint, Vector2 firstRhythmDirection, Node previousRoom, Door previousDoor, List<Node> noOverlapRooms,
             RoomGeneratorOptions options, Vector2[] testVertices = null)
         {
@@ -99,6 +110,13 @@ namespace Assets.Scripts
 
             return room;
         }
+
+        /// <summary>
+        /// Connect the given points by the defined connection type to RoomSegments
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="roomGeneratorOptions"></param>
+        /// <returns></returns>
         protected static LinkedList<RoomSegment> connectPoints(LinkedList<Vector2> points, RoomGeneratorOptions roomGeneratorOptions)
         {
             if (roomGeneratorOptions.type == LayoutType.arcs)
@@ -173,6 +191,13 @@ namespace Assets.Scripts
             return new((float)x, (float)y);*/
         }
 
+        /// <summary>
+        /// Given a room (list of vertices), return a (linked) list of points that roughly follow the shape of the room but can be offset 
+        /// from them by some random numbers defined in the options
+        /// </summary>
+        /// <param name="room"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
         private static LinkedList<Vector2> samplePoints(GeneralLayoutRoom room, RoomGeneratorOptions options)
         {
             LinkedList<Vector2> sampledPoints = new LinkedList<Vector2>();
@@ -206,11 +231,24 @@ namespace Assets.Scripts
             return sampledPoints;
         }
 
+        /// <summary>
+        /// Combine the given rooms to one big room (combine their vertices)
+        /// </summary>
+        /// <param name="generalLayoutRooms"></param>
+        /// <returns></returns>
         private static GeneralLayoutRoom createBigRoom(LinkedList<GeneralLayoutRoom> generalLayoutRooms)
         {
             return new GeneralLayoutRoom(createBigRoomRec(0, new List<Vector2>(), generalLayoutRooms));
         }
 
+        /// <summary>
+        /// Recursive function for <see cref="createBigRoom(LinkedList{GeneralLayoutRoom})"/>
+        /// </summary>
+        /// <param name="roomIndex"></param>
+        /// <param name="bigRoomVertices"></param>
+        /// <param name="generalLayoutRooms"></param>
+        /// <param name="startWith"></param>
+        /// <returns></returns>
         private static List<Vector2> createBigRoomRec(int roomIndex, List<Vector2> bigRoomVertices, LinkedList<GeneralLayoutRoom> generalLayoutRooms, int startWith = 0)
         {
             for (int i = 0; i < generalLayoutRooms.ElementAt(roomIndex).numberOfEdges; i++)
@@ -243,6 +281,7 @@ namespace Assets.Scripts
             }
             return bigRoomVertices;
         }
+
 
         private static bool createNextRandomGeneralLayoutRoom(GeneralLayoutRoom previousRoom, Door previousDoor, List<Node> noOverlapRooms, RoomGeneratorOptions options,
             out GeneralLayoutRoom nextRoom)

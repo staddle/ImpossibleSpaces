@@ -71,7 +71,7 @@ public class Door : MonoBehaviour
         // add collider when Door becomes active (when mesh is already calculated)
         doorCollider = gameObject.AddComponent<BoxCollider>();
         doorCollider.isTrigger = true;
-        doorCollider.center = position + Vector3.up * doorHeight / 2;
+        doorCollider.center += Vector3.up * doorHeight / 2;
         Vector3 size = new Vector3(0, doorHeight, 0);
         Vector3 p1Top2 = point2 - point1;
         outwardsDirection = Vector3.Cross(p1Top2, new(0, 1, 0)).normalized;
