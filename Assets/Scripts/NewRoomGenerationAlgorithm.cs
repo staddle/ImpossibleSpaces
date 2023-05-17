@@ -20,6 +20,7 @@ namespace Assets.Scripts
 
             for (int i = 0; i < currentlyShownRooms.Count; i++)
             {
+                // door.nextNode von neuem Raum ist Startraum? Wann wird das gesetzt?
                 Node node = currentlyShownRooms[i];
                 bool isVisible = false;
                 var doorsCopy = new List<Door>(node.doors);
