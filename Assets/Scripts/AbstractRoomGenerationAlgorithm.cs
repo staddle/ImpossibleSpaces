@@ -99,7 +99,7 @@ namespace Assets.Scripts
 
             Node room = roomGameObject.AddComponent<Node>();
             RoomDebug debug = new RoomDebug(generalLayoutRooms, bigRoom, sampledPoints);
-            room.setupNode(roomSegments, previousRoom, previousDoor, debug, options, CollidedWithDoor);
+            room.setupNode(roomSegments, previousRoom, previousDoor, debug, options, CollidedWithDoor, ExitedDoor);
             RoomDebugs.Add(room, debug);
 
             // generate doors
@@ -309,6 +309,8 @@ namespace Assets.Scripts
             }
 
             nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, 0, false, noOverlapRooms, options);
+            if (nextRoom == null)
+                return false;
             return true;
         }
 

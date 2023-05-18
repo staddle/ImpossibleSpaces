@@ -12,35 +12,43 @@ namespace Assets.Scripts
         private Transform playerTransform;
         private RoomGeneratorOptions options;
         private List<Vector2[]> testRooms;
+        private Vector3 lastPlayerLocation;
+        private float positionThreshold = 0.01f;
 
         // Update is called once per frame
         void Update()
         {
-            raycasts.Clear();
-
-            for (int i = 0; i < currentlyShownRooms.Count; i++)
+            if(lastPlayerLocation == null || Vector3.Distance(lastPlayerLocation, playerTransform.position) > positionThreshold)
             {
-                // door.nextNode von neuem Raum ist Startraum? Wann wird das gesetzt?
-                Node node = currentlyShownRooms[i];
-                bool isVisible = false;
-                var doorsCopy = new List<Door>(node.doors);
-                foreach(Door door in doorsCopy)
+                lastPlayerLocation = playerTransform.position;
+                
+                raycasts.Clear();
+
+                for (int i = 0; i < currentlyShownRooms.Count; i++)
                 {
-                    bool doorVisible = isDoorVisible(door);
-                    if (doorVisible)
+                    // door.nextNode von neuem Raum ist Startraum? Wann wird das gesetzt?
+                    Node node = currentlyShownRooms[i];
+                    bool isVisible = false;
+                    var doorsCopy = new List<Door>(node.doors);
+                    foreach(Door door in doorsCopy)
                     {
-                        var roomGenerated = true;
-                        if(door.nextNode == null)
-                            roomGenerated = createRoomForDoor(door);
-                        if(roomGenerated && !currentlyShownRooms.Contains(door.nextNode))
+                        bool doorVisible = door.Equals(get().switchedRoom);
+                        doorVisible |= isDoorVisible(door);
+                        if (doorVisible)
                         {
-                            setActiveRoom(door.nextNode, true);
-                        }
-                        isVisible = true;
-                    } 
+                            var roomGenerated = true;
+                            if(door.nextNode == null)
+                                roomGenerated = createRoomForDoor(door);
+                            if(roomGenerated && !currentlyShownRooms.Contains(door.nextNode))
+                            {
+                                setActiveRoom(door.nextNode, true);
+                            }
+                            isVisible = true;
+                        } 
+                    }
+                    if (!isVisible && !node.Equals(currentRoom))
+                        setActiveRoom(node, false);
                 }
-                if (!isVisible && !node.Equals(currentRoom))
-                    setActiveRoom(node, false);
             }
         }
 
@@ -69,8 +77,13 @@ namespace Assets.Scripts
 
         private bool createRoomForDoor(Door door)
         {
+            if (door == null)
+            {
+                Debug.LogError("door was null");
+                return false;
+            }
             Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-            door.nextNode = createRandomRoom(new Vector2(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, currentRoom, door, currentlyShownRooms, options, 
+            door.nextNode = createRandomRoom(new Vector2(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, door.previousNode ?? currentRoom, door, currentlyShownRooms, options, 
                 testRooms != null && testRooms.Count < door.previousNode.depth + 1 ? testRooms[door.previousNode.depth+1] : null);
             if(door.nextNode == null)
             {
@@ -116,7 +129,7 @@ namespace Assets.Scripts
                         return true;
                     }
                 }*/
-                for (int i = currentRoom.LayerNumber; i<currentRoom.LayerNumber+options.depthForward; i++)
+                for (int i = currentRoom.LayerNumber-1; i<currentRoom.LayerNumber+options.depthForward; i++)
                 {
                     DoorHit doorHit = hittingDoorAtDepth(door, i, position, direction, maxDistance);
                     if (doorHit == DoorHit.CORRECT_DOOR)
@@ -134,6 +147,7 @@ namespace Assets.Scripts
 
         private enum DoorHit
         {
+            NOTHING,
             WALLS,
             OTHER_DOOR,
             CORRECT_DOOR
@@ -160,8 +174,9 @@ namespace Assets.Scripts
                     return DoorHit.OTHER_DOOR;
                 }
                 raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
+                return DoorHit.WALLS;
             }
-            return DoorHit.WALLS;
+            return DoorHit.NOTHING;
         }
 
         public override void movedThroughDoor(Door door)
@@ -195,7 +210,7 @@ namespace Assets.Scripts
 
         // Use this for initialization
         void Start()
-        {
+        {   
 
         }
     }

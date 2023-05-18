@@ -18,15 +18,17 @@ public class Node : MonoBehaviour
     Mesh mesh;
     System.Random random = new System.Random();
     Door.OnCollisionEnterDel onCollisionEnter;
+    Door.OnCollisionExitDel onCollisionExit;
 
-    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomDebug roomDebug, RoomGeneratorOptions options, Door.OnCollisionEnterDel callback)
+    public void setupNode(LinkedList<RoomSegment> segments, Node previousNode, Door previousDoor, RoomDebug roomDebug, RoomGeneratorOptions options, Door.OnCollisionEnterDel callback, Door.OnCollisionExitDel callbackExit)
     {
         this.segments = segments;
         this.options = options;
         this.roomDebug = roomDebug;
-        gameObject.layer = LayerNumber;
         depth = previousNode == null ? 0 : previousNode.depth + 1;
+        gameObject.layer = LayerNumber;
         onCollisionEnter = callback;
+        onCollisionExit = callbackExit;
 
         // first room doesn't have a back door
         if(previousNode != null && options.backDoorToPreviousRoom)
@@ -36,7 +38,7 @@ public class Node : MonoBehaviour
             doorGO.transform.position = previousDoor.position;
             doorGO.layer = previousNode.LayerNumber;
             Door door = doorGO.AddComponent<Door>();
-            door.setupDoor(segments.First.Value, this, previousDoor.position, options.doorHeight, options.doorArea, options.doorWidth, onCollisionEnter, true);
+            door.setupDoor(segments.First.Value, this, previousDoor.position, options.doorHeight, options.doorArea, options.doorWidth, onCollisionEnter, onCollisionExit, true);
             door.nextNode = previousNode;
             doors.Add(door);
         }
@@ -82,7 +84,7 @@ public class Node : MonoBehaviour
             doorGO.transform.parent = transform;
             doorGO.transform.position = position;
             Door door = doorGO.AddComponent<Door>();
-            door.setupDoor(segment, this, position, options.doorHeight, options.doorArea, options.doorWidth, onCollisionEnter);
+            door.setupDoor(segment, this, position, options.doorHeight, options.doorArea, options.doorWidth, onCollisionEnter, onCollisionExit);
             doors.Add(door);
         }
     }

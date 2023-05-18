@@ -19,7 +19,7 @@ public partial class LayoutCreator : MonoBehaviour
     public AutoMoveThroughRooms autoMove;
     public AbstractRoomGenerationAlgorithm generationAlgorithm;
     [HideInInspector]
-    public bool switchedRoom = false;
+    public Door switchedRoom = null;
 
     private OldRoomGenerationAlgorithm oldRoomGenerationAlgorithm;
     private NewRoomGenerationAlgorithm newRoomGenerationAlgorithm;
@@ -140,11 +140,23 @@ public partial class LayoutCreator : MonoBehaviour
         CapsuleCollider player = playerObject.GetComponent<CapsuleCollider>();
         if (player != null && collider == player)
         {
-            if (get().switchedRoom) get().switchedRoom = false;
-            else
+            if (get().switchedRoom == null)
             {
-                get().goNextRoom(door);
+                get().goNextRoom(door); 
             }
+        }
+    }
+
+    public static void ExitedDoor(Collider collider, Door door)
+    {
+        LayoutCreator layoutCreator = get();
+        RoomGeneratorOptions roomGeneratorOptions1 = layoutCreator.roomGeneratorOptions;
+        Transform playerTransform = roomGeneratorOptions1.playerTransform;
+        GameObject playerObject = playerTransform.gameObject;
+        CapsuleCollider player = playerObject.GetComponent<CapsuleCollider>();
+        if (player != null && collider == player)
+        {
+            get().switchedRoom = null;
         }
     }
 
