@@ -26,7 +26,6 @@ namespace Assets.Scripts
 
                 for (int i = 0; i < currentlyShownRooms.Count; i++)
                 {
-                    // door.nextNode von neuem Raum ist Startraum? Wann wird das gesetzt?
                     Node node = currentlyShownRooms[i];
                     bool isVisible = false;
                     var doorsCopy = new List<Door>(node.doors);
@@ -138,7 +137,8 @@ namespace Assets.Scripts
                     } 
                     else if(doorHit == DoorHit.WALLS)
                     {
-                        break;
+                        if (i == currentRoom.LayerNumber - 1) continue; //go to current layer if walls of previous room are hit (through door of current room)
+                        else break; //else this ray won't hit any other door
                     }
                 }
             }
@@ -167,9 +167,14 @@ namespace Assets.Scripts
                     //Debug.Log("Door is visible");
                     raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
                     return DoorHit.CORRECT_DOOR;
-                } 
-                else if(hit.transform.gameObject.GetComponent<Door>() != null)
+                }
+                else if (hit.transform.gameObject.GetComponent<Door>() != null)
                 {
+                    if (hittingDoorAtDepth(door, depth, hit.point, direction, maxDistance) == DoorHit.CORRECT_DOOR)
+                    {
+                        raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
+                        return DoorHit.CORRECT_DOOR;
+                    }
                     raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
                     return DoorHit.OTHER_DOOR;
                 }

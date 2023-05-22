@@ -401,6 +401,11 @@ namespace Assets.Scripts
                 // get new depth by getting intersection point of starting point and room's edge
                 handleOverlapRooms(out Vector2 newDepthPoint, startingPoint34, startingPoint, noOverlapRooms);
                 float newDepth = (newDepthPoint - startingPoint).magnitude;
+                if(newDepth < options.lengthInRhythmDirectionWherePlayAreaCannotEnd)
+                {
+                    Debug.LogError("Not enough depth for room available");
+                    return null; //starting point is already inside some other room -> cant generate room here
+                }
                 newPoint3 = point2 + rhythmDirection * newDepth;
                 newPoint4 = point1 + rhythmDirection * newDepth;
                 
