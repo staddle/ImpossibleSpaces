@@ -24,6 +24,9 @@ public partial class LayoutCreator : MonoBehaviour
     private OldRoomGenerationAlgorithm oldRoomGenerationAlgorithm;
     private NewRoomGenerationAlgorithm newRoomGenerationAlgorithm;
 
+    public delegate void switchedRoomDelegate(int newDepth);
+    private List<switchedRoomDelegate> callbacks = new List<switchedRoomDelegate>();
+
     static Dictionary<Node, RoomDebug> roomDebugs = new Dictionary<Node, RoomDebug>();
     static LayoutCreator instance;
 
@@ -86,6 +89,11 @@ public partial class LayoutCreator : MonoBehaviour
     public static Dictionary<Node, RoomDebug> RoomDebugs => roomDebugs;
     public Node CurrentRoom => generationAlgorithm.currentRoom;
 
+    public Journey getJourney()
+    {
+        return GetComponent<Journey>();
+    }
+
     private void test()
     {
         //createRandomGeneralLayoutRoom
@@ -122,12 +130,26 @@ public partial class LayoutCreator : MonoBehaviour
         }
     }
 
+    public void subscribeToRoomSwitch(switchedRoomDelegate switchedRoomDelegate)
+    {
+        callbacks.Add(switchedRoomDelegate);
+    }
+
+    public void unsubscribeToRoomSwitch(switchedRoomDelegate switchedRoomDelegate)
+    {
+        callbacks.Remove(switchedRoomDelegate);
+    }
+
     public void goNextRoom(Door door)
     {
         generationAlgorithm.movedThroughDoor(door);
         if(get().autoMove != null)
         {
             get().autoMove.triggeredDoor(door);
+        }
+        foreach (switchedRoomDelegate callback in callbacks)
+        {
+            callback(generationAlgorithm.currentRoom.depth);
         }
     }
 

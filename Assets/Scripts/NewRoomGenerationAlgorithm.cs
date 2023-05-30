@@ -112,11 +112,16 @@ namespace Assets.Scripts
 
         private bool isDoorVisible(Door door)
         {
+            return raycastingVisibilityCheck(door);
+        }
+
+        private bool raycastingVisibilityCheck(Door door)
+        {
             Vector3 position = playerTransform.position;
             Vector3 toMiddle = (door.point2 - door.point1).normalized;
             List<Vector3> directions = new List<Vector3> { door.position - position, door.point1 - position + toMiddle * 0.01f, door.point2 - position - toMiddle * 0.01f };
             directions.ForEach(x => x.Normalize());
-            float maxDistance = (float) Math.Sqrt(Math.Pow(options.playArea.x, 2) + Math.Pow(options.playArea.y,2));
+            float maxDistance = (float)Math.Sqrt(Math.Pow(options.playArea.x, 2) + Math.Pow(options.playArea.y, 2));
             foreach (Vector3 direction in directions)
             {
                 /*if (Physics.Raycast(position, direction, out RaycastHit hit, maxDistance))
@@ -128,17 +133,29 @@ namespace Assets.Scripts
                         return true;
                     }
                 }*/
-                for (int i = currentRoom.LayerNumber-1; i<currentRoom.LayerNumber+options.depthForward; i++)
+                bool correctHitPreviousLayer = false;
+                for (int i = currentRoom.LayerNumber - 1; i < currentRoom.LayerNumber + options.depthForward; i++)
                 {
                     DoorHit doorHit = hittingDoorAtDepth(door, i, position, direction, maxDistance);
                     if (doorHit == DoorHit.CORRECT_DOOR)
                     {
+                        if (i == currentRoom.LayerNumber - 1)
+                        {
+                            //door was hit on previous layer, but still walls could be hit on current layer, so we need to check current layer still
+                            correctHitPreviousLayer = true;
+                            continue;
+                        }
                         return true;
-                    } 
-                    else if(doorHit == DoorHit.WALLS)
+                    }
+                    else if (doorHit == DoorHit.WALLS)
                     {
                         if (i == currentRoom.LayerNumber - 1) continue; //go to current layer if walls of previous room are hit (through door of current room)
                         else break; //else this ray won't hit any other door
+                    }
+                    else if (correctHitPreviousLayer)
+                    {
+                        //if not walls were hit on current layer, then the hit on previous layer was correct 
+                        return true;
                     }
                 }
             }

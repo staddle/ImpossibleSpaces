@@ -36,6 +36,12 @@ namespace Assets.Scripts
                 4. Draw mesh    */
             System.Random random = new();
 
+            var journey = get().getJourney();
+            if (journey != null)
+            {
+                options = journey.optionsForDepth(previousRoom?.depth + 1 ?? 1);
+            }
+
             // first room from starting point
             LinkedList<GeneralLayoutRoom> generalLayoutRooms = new LinkedList<GeneralLayoutRoom>();
             if (testVertices == null)

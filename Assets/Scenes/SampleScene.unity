@@ -898,7 +898,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 116
+  m_Constraints: 126
   m_CollisionDetection: 1
 --- !u!114 &1725982602
 MonoBehaviour:
@@ -978,6 +978,7 @@ GameObject:
   - component: {fileID: 1921636977}
   - component: {fileID: 1921636979}
   - component: {fileID: 1921636978}
+  - component: {fileID: 1921636980}
   m_Layer: 0
   m_Name: LayoutCreator
   m_TagString: Untagged
@@ -1038,7 +1039,7 @@ MonoBehaviour:
   probabilityOfNextRoom: 0.5
   probabilityMultiplierPerNextRoom: 0.5
   minimumGeneralLayoutWidth: 1
-  maximumGeneralLayoutRoomSize: 6
+  maximumGeneralLayoutRoomSize: 2
   lengthInRhythmDirectionWherePlayAreaCannotEnd: 1
   maxNumberOfSamplePointsPerEdge: 2
   maxMagnitudeOfSamplePointsGoingAway: 1.5
@@ -1071,3 +1072,17 @@ MonoBehaviour:
   wallSegmentPrefab: {fileID: 0}
   ceilingPrefab: {fileID: 0}
   doorPrefab: {fileID: 0}
+--- !u!114 &1921636980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1921636974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ac21006c2a7eaf4d92435542af3105f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  journeyType: 0
+  endDepth: 5
