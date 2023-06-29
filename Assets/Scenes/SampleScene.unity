@@ -341,7 +341,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!64 &599916902
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -376,7 +376,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 3f9336a53d1d2ea43895699cc52cb411, type: 2}
+  - {fileID: 2100000, guid: 0c7b5bbcfd5ef0847b1cce848b62326d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1047,7 +1047,7 @@ MonoBehaviour:
   probabilityOfNextRoom: 0.5
   probabilityMultiplierPerNextRoom: 0.5
   minimumGeneralLayoutWidth: 1
-  maximumGeneralLayoutRoomSize: 6
+  maximumGeneralLayoutWidth: 6
   lengthInRhythmDirectionWherePlayAreaCannotEnd: 1
   maxNumberOfSamplePointsPerEdge: 2
   maxMagnitudeOfSamplePointsGoingAway: 1.5
@@ -1058,14 +1058,14 @@ MonoBehaviour:
   backDoorToPreviousRoom: 1
   oldRoomGenerator: 0
   debugGenerator: 1
-  type: 1
+  type: 0
   useOnlyVertices: 1
   invertAfterEachPoint: 1
   bezierSubdivisions: 10
   bezierMaxTangentAngle: 45
-  showGeneralLayoutRooms: 0
+  showGeneralLayoutRooms: 1
   showBigRoom: 0
-  showSamplePoints: 0
+  showSamplePoints: 1
   showVertexNumbers: 0
   showSamplePointNumbers: 0
   showFinishedRoom: 1

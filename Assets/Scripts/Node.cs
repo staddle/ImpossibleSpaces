@@ -63,11 +63,12 @@ public class Node : MonoBehaviour
 
     public void generateDoors(List<Node> visibleRooms)
     {
-        int numberOfDoors = random.Next(options.minNumberOfDoorsPerRoom, options.maxNumberOfDoorsPerRoom);
 
         List<RoomSegment> segmentsThatAllowDoors = segments.Where(s => 
             s.canContainDoor(options.doorWidth, options.lengthInRhythmDirectionWherePlayAreaCannotEnd, playArea, visibleRooms) &&
             doors.Where(x => x.roomSegment == s).Count() == 0).ToList(); //disallow multiple doors per segment (TODO)
+
+        int numberOfDoors = random.Next(options.minNumberOfDoorsPerRoom, Math.Min(options.maxNumberOfDoorsPerRoom, segmentsThatAllowDoors.Count));
         if(segmentsThatAllowDoors.Count == 0)
         {
             Debug.LogError("No segments that allow doors found!");

@@ -114,11 +114,11 @@ public class LayoutCreatorEditor : Editor
 
     public void OnSceneGUI()
     {
-        /* Handles.DrawBezier(Vector3.zero, new Vector3(10, 0, 0), Vector3.zero, Vector3.zero, Color.black, null, 0);
+         //Handles.DrawBezier(Vector3.zero, new Vector3(10, 0, 0), Vector3.zero, Vector3.zero, Color.black, null, 0);
 
-         if(layoutCreator.roomGeneratorOptions != null && layoutCreator.roomGeneratorOptions.showFinishedRoom && layoutCreator.roomSegments != null && layoutCreator.roomSegments.Count > 0)
+         if(layoutCreator.roomGeneratorOptions != null && layoutCreator.roomGeneratorOptions.showFinishedRoom && layoutCreator.CurrentRoom.segments != null && layoutCreator.CurrentRoom.segments.Count > 0)
          {
-             foreach(RoomSegment segment in layoutCreator.roomSegments)
+             foreach(RoomSegment segment in layoutCreator.CurrentRoom.segments)
              {
                  if(segment.GetType() != typeof(BezierRoomSegment))
                  {
@@ -126,7 +126,7 @@ public class LayoutCreatorEditor : Editor
                      segment.drawHandles();
                  }
              }
-         }*/
+         }
         if (layoutCreator == null || layoutCreator.generationAlgorithm == null || layoutCreator.CurrentRoom == null)
             return;
         var doors = layoutCreator.CurrentRoom.doors;

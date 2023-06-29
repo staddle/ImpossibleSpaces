@@ -20,7 +20,7 @@ public class RoomGeneratorOptions : MonoBehaviour
     [Range(0,5f)]
     public float minimumGeneralLayoutWidth = 1;
     [Range(0,10f)]
-    public float maximumGeneralLayoutRoomSize = 6;
+    public float maximumGeneralLayoutWidth = 6;
     [Range(0,10)]
     public float lengthInRhythmDirectionWherePlayAreaCannotEnd = 1;
     [Range(0,10)]

@@ -322,7 +322,7 @@ namespace Assets.Scripts
                 float sign = (random.Next(0, 1) - 0.5f) * 2;
                 // width in one direction at least minimumWidth / 2 (for door) but if minimumGeneralLayoutWidth (minus other side of the door) is bigger, then it should be at least that
                 float minWidth1 = (options.minimumGeneralLayoutWidth - minimumWidth / 2) < minimumWidth / 2 ? (options.minimumGeneralLayoutWidth - minimumWidth / 2) : minimumWidth / 2;
-                float width1 = randomFloat(minWidth1, options.maximumGeneralLayoutRoomSize); //TODO: Can room be bigger than maximumGeneralLayoutRoomSize with this approach?
+                float width1 = randomFloat(minWidth1, options.maximumGeneralLayoutWidth); //TODO: Can room be bigger than maximumGeneralLayoutRoomSize with this approach?
 
                 float minWidth2 = minimumWidth / 2;
                 if (width1 < (options.minimumGeneralLayoutWidth - minimumWidth / 2))
@@ -330,8 +330,8 @@ namespace Assets.Scripts
                     float atLeast = options.minimumGeneralLayoutWidth - width1;
                     minWidth2 = atLeast < minWidth2 ? minWidth2 : atLeast;
                 }
-                float width2 = randomFloat(minWidth2, options.maximumGeneralLayoutRoomSize);
-                depth = randomFloat(options.minimumGeneralLayoutWidth, options.maximumGeneralLayoutRoomSize);
+                float width2 = randomFloat(minWidth2, options.maximumGeneralLayoutWidth);
+                depth = randomFloat(options.minimumGeneralLayoutWidth, options.maximumGeneralLayoutWidth);
                 rhythmDirection.Normalize();
 
                 rhythmDirectionPerpendicular = new(sign * rhythmDirection.y, -sign * rhythmDirection.x);
