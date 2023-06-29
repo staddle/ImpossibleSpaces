@@ -19,10 +19,13 @@ public partial class LayoutCreator : MonoBehaviour
     public AutoMoveThroughRooms autoMove;
     public AbstractRoomGenerationAlgorithm generationAlgorithm;
     [HideInInspector]
-    public bool switchedRoom = false;
+    public Door switchedRoom = null;
 
     private OldRoomGenerationAlgorithm oldRoomGenerationAlgorithm;
     private NewRoomGenerationAlgorithm newRoomGenerationAlgorithm;
+
+    public delegate void switchedRoomDelegate(int newDepth);
+    private List<switchedRoomDelegate> callbacks = new List<switchedRoomDelegate>();
 
     static Dictionary<Node, RoomDebug> roomDebugs = new Dictionary<Node, RoomDebug>();
     static LayoutCreator instance;
@@ -86,6 +89,11 @@ public partial class LayoutCreator : MonoBehaviour
     public static Dictionary<Node, RoomDebug> RoomDebugs => roomDebugs;
     public Node CurrentRoom => generationAlgorithm.currentRoom;
 
+    public Journey getJourney()
+    {
+        return GetComponent<Journey>();
+    }
+
     private void test()
     {
         //createRandomGeneralLayoutRoom
@@ -122,12 +130,26 @@ public partial class LayoutCreator : MonoBehaviour
         }
     }
 
+    public void subscribeToRoomSwitch(switchedRoomDelegate switchedRoomDelegate)
+    {
+        callbacks.Add(switchedRoomDelegate);
+    }
+
+    public void unsubscribeToRoomSwitch(switchedRoomDelegate switchedRoomDelegate)
+    {
+        callbacks.Remove(switchedRoomDelegate);
+    }
+
     public void goNextRoom(Door door)
     {
         generationAlgorithm.movedThroughDoor(door);
         if(get().autoMove != null)
         {
             get().autoMove.triggeredDoor(door);
+        }
+        foreach (switchedRoomDelegate callback in callbacks)
+        {
+            callback(generationAlgorithm.currentRoom.depth);
         }
     }
 
@@ -140,11 +162,23 @@ public partial class LayoutCreator : MonoBehaviour
         CapsuleCollider player = playerObject.GetComponent<CapsuleCollider>();
         if (player != null && collider == player)
         {
-            if (get().switchedRoom) get().switchedRoom = false;
-            else
+            if (get().switchedRoom == null)
             {
-                get().goNextRoom(door);
+                get().goNextRoom(door); 
             }
+        }
+    }
+
+    public static void ExitedDoor(Collider collider, Door door)
+    {
+        LayoutCreator layoutCreator = get();
+        RoomGeneratorOptions roomGeneratorOptions1 = layoutCreator.roomGeneratorOptions;
+        Transform playerTransform = roomGeneratorOptions1.playerTransform;
+        GameObject playerObject = playerTransform.gameObject;
+        CapsuleCollider player = playerObject.GetComponent<CapsuleCollider>();
+        if (player != null && collider == player)
+        {
+            get().switchedRoom = null;
         }
     }
 

@@ -12,35 +12,42 @@ namespace Assets.Scripts
         private Transform playerTransform;
         private RoomGeneratorOptions options;
         private List<Vector2[]> testRooms;
+        private Vector3 lastPlayerLocation;
+        private float positionThreshold = 0.01f;
 
         // Update is called once per frame
         void Update()
         {
-            raycasts.Clear();
-
-            for (int i = 0; i < currentlyShownRooms.Count; i++)
+            if(lastPlayerLocation == null || Vector3.Distance(lastPlayerLocation, playerTransform.position) > positionThreshold)
             {
-                // door.nextNode von neuem Raum ist Startraum? Wann wird das gesetzt?
-                Node node = currentlyShownRooms[i];
-                bool isVisible = false;
-                var doorsCopy = new List<Door>(node.doors);
-                foreach(Door door in doorsCopy)
+                lastPlayerLocation = playerTransform.position;
+                
+                raycasts.Clear();
+
+                for (int i = 0; i < currentlyShownRooms.Count; i++)
                 {
-                    bool doorVisible = isDoorVisible(door);
-                    if (doorVisible)
+                    Node node = currentlyShownRooms[i];
+                    bool isVisible = false;
+                    var doorsCopy = new List<Door>(node.doors);
+                    foreach(Door door in doorsCopy)
                     {
-                        var roomGenerated = true;
-                        if(door.nextNode == null)
-                            roomGenerated = createRoomForDoor(door);
-                        if(roomGenerated && !currentlyShownRooms.Contains(door.nextNode))
+                        bool doorVisible = door.Equals(get().switchedRoom);
+                        doorVisible |= isDoorVisible(door);
+                        if (doorVisible)
                         {
-                            setActiveRoom(door.nextNode, true);
-                        }
-                        isVisible = true;
-                    } 
+                            var roomGenerated = true;
+                            if(door.nextNode == null)
+                                roomGenerated = createRoomForDoor(door);
+                            if(roomGenerated && !currentlyShownRooms.Contains(door.nextNode))
+                            {
+                                setActiveRoom(door.nextNode, true);
+                            }
+                            isVisible = true;
+                        } 
+                    }
+                    if (!isVisible && !node.Equals(currentRoom))
+                        setActiveRoom(node, false);
                 }
-                if (!isVisible && !node.Equals(currentRoom))
-                    setActiveRoom(node, false);
             }
         }
 
@@ -69,8 +76,13 @@ namespace Assets.Scripts
 
         private bool createRoomForDoor(Door door)
         {
+            if (door == null)
+            {
+                Debug.LogError("door was null");
+                return false;
+            }
             Vector2 p2ToP1 = door.getPoint2() - door.getPoint1();
-            door.nextNode = createRandomRoom(new Vector2(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, currentRoom, door, currentlyShownRooms, options, 
+            door.nextNode = createRandomRoom(new Vector2(door.position.x, door.position.z), new Vector2(p2ToP1.y, -p2ToP1.x).normalized, door.previousNode ?? currentRoom, door, currentlyShownRooms, options, 
                 testRooms != null && testRooms.Count < door.previousNode.depth + 1 ? testRooms[door.previousNode.depth+1] : null);
             if(door.nextNode == null)
             {
@@ -100,11 +112,16 @@ namespace Assets.Scripts
 
         private bool isDoorVisible(Door door)
         {
+            return raycastingVisibilityCheck(door);
+        }
+
+        private bool raycastingVisibilityCheck(Door door)
+        {
             Vector3 position = playerTransform.position;
             Vector3 toMiddle = (door.point2 - door.point1).normalized;
             List<Vector3> directions = new List<Vector3> { door.position - position, door.point1 - position + toMiddle * 0.01f, door.point2 - position - toMiddle * 0.01f };
             directions.ForEach(x => x.Normalize());
-            float maxDistance = (float) Math.Sqrt(Math.Pow(options.playArea.x, 2) + Math.Pow(options.playArea.y,2));
+            float maxDistance = (float)Math.Sqrt(Math.Pow(options.playArea.x, 2) + Math.Pow(options.playArea.y, 2));
             foreach (Vector3 direction in directions)
             {
                 /*if (Physics.Raycast(position, direction, out RaycastHit hit, maxDistance))
@@ -116,16 +133,29 @@ namespace Assets.Scripts
                         return true;
                     }
                 }*/
-                for (int i = currentRoom.LayerNumber; i<currentRoom.LayerNumber+options.depthForward; i++)
+                bool correctHitPreviousLayer = false;
+                for (int i = currentRoom.LayerNumber - 1; i < currentRoom.LayerNumber + options.depthForward; i++)
                 {
                     DoorHit doorHit = hittingDoorAtDepth(door, i, position, direction, maxDistance);
                     if (doorHit == DoorHit.CORRECT_DOOR)
                     {
+                        if (i == currentRoom.LayerNumber - 1)
+                        {
+                            //door was hit on previous layer, but still walls could be hit on current layer, so we need to check current layer still
+                            correctHitPreviousLayer = true;
+                            continue;
+                        }
                         return true;
-                    } 
-                    else if(doorHit == DoorHit.WALLS)
+                    }
+                    else if (doorHit == DoorHit.WALLS)
                     {
-                        break;
+                        if (i == currentRoom.LayerNumber - 1) continue; //go to current layer if walls of previous room are hit (through door of current room)
+                        else break; //else this ray won't hit any other door
+                    }
+                    else if (correctHitPreviousLayer)
+                    {
+                        //if not walls were hit on current layer, then the hit on previous layer was correct 
+                        return true;
                     }
                 }
             }
@@ -134,6 +164,7 @@ namespace Assets.Scripts
 
         private enum DoorHit
         {
+            NOTHING,
             WALLS,
             OTHER_DOOR,
             CORRECT_DOOR
@@ -153,15 +184,21 @@ namespace Assets.Scripts
                     //Debug.Log("Door is visible");
                     raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
                     return DoorHit.CORRECT_DOOR;
-                } 
-                else if(hit.transform.gameObject.GetComponent<Door>() != null)
+                }
+                else if (hit.transform.gameObject.GetComponent<Door>() != null)
                 {
+                    if (hittingDoorAtDepth(door, depth, hit.point, direction, maxDistance) == DoorHit.CORRECT_DOOR)
+                    {
+                        raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
+                        return DoorHit.CORRECT_DOOR;
+                    }
                     raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
                     return DoorHit.OTHER_DOOR;
                 }
                 raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
+                return DoorHit.WALLS;
             }
-            return DoorHit.WALLS;
+            return DoorHit.NOTHING;
         }
 
         public override void movedThroughDoor(Door door)
@@ -195,7 +232,7 @@ namespace Assets.Scripts
 
         // Use this for initialization
         void Start()
-        {
+        {   
 
         }
     }

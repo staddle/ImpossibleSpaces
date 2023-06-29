@@ -36,6 +36,12 @@ namespace Assets.Scripts
                 4. Draw mesh    */
             System.Random random = new();
 
+            var journey = get().getJourney();
+            if (journey != null)
+            {
+                options = journey.optionsForDepth(previousRoom?.depth + 1 ?? 1);
+            }
+
             // first room from starting point
             LinkedList<GeneralLayoutRoom> generalLayoutRooms = new LinkedList<GeneralLayoutRoom>();
             if (testVertices == null)
@@ -99,7 +105,7 @@ namespace Assets.Scripts
 
             Node room = roomGameObject.AddComponent<Node>();
             RoomDebug debug = new RoomDebug(generalLayoutRooms, bigRoom, sampledPoints);
-            room.setupNode(roomSegments, previousRoom, previousDoor, debug, options, CollidedWithDoor);
+            room.setupNode(roomSegments, previousRoom, previousDoor, debug, options, CollidedWithDoor, ExitedDoor);
             RoomDebugs.Add(room, debug);
 
             // generate doors
@@ -309,6 +315,8 @@ namespace Assets.Scripts
             }
 
             nextRoom = createRandomGeneralLayoutRoom(nextStartingPoint, nextRhythmDirection, 0, false, noOverlapRooms, options);
+            if (nextRoom == null)
+                return false;
             return true;
         }
 
@@ -399,6 +407,11 @@ namespace Assets.Scripts
                 // get new depth by getting intersection point of starting point and room's edge
                 handleOverlapRooms(out Vector2 newDepthPoint, startingPoint34, startingPoint, noOverlapRooms);
                 float newDepth = (newDepthPoint - startingPoint).magnitude;
+                if(newDepth < options.lengthInRhythmDirectionWherePlayAreaCannotEnd)
+                {
+                    Debug.LogError("Not enough depth for room available");
+                    return null; //starting point is already inside some other room -> cant generate room here
+                }
                 newPoint3 = point2 + rhythmDirection * newDepth;
                 newPoint4 = point1 + rhythmDirection * newDepth;
                 

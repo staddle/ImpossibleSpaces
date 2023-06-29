@@ -64,6 +64,7 @@ public class RoomGeneratorOptions : MonoBehaviour
     public Transform playerTransform;
     [Range(0,5f)]
     public float doorArea = 0.5f;
+    //old room generator
     public bool renderNextRoomsAlready = false;
     [Tooltip("How many rooms forward should be tested whether a room is visible or not (how many doors in a row can be visible)")]
     public int depthForward = 3;

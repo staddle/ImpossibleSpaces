@@ -11,13 +11,15 @@ public class Door : MonoBehaviour
     public Node previousNode;
     public Node nextNode;
     public delegate void OnCollisionEnterDel(Collider collider, Door door);
+    public delegate void OnCollisionExitDel(Collider collider, Door door);
 
     private BoxCollider doorCollider;
     private OnCollisionEnterDel onCollisionEnter;
+    private OnCollisionExitDel onCollisionExit;
     private float doorHeight, doorArea;
  
 
-    public void setupDoor(RoomSegment segment, Node prev, Vector3 position, float doorHeight, float doorArea, float doorWidth, OnCollisionEnterDel callback, bool skipLayer = false)
+    public void setupDoor(RoomSegment segment, Node prev, Vector3 position, float doorHeight, float doorArea, float doorWidth, OnCollisionEnterDel callback, OnCollisionExitDel callbackExit, bool skipLayer = false)
     {
         roomSegment = segment;
         previousNode = prev;
@@ -25,6 +27,7 @@ public class Door : MonoBehaviour
             gameObject.layer = previousNode.LayerNumber;
         this.position = position;
         onCollisionEnter = callback;
+        onCollisionExit = callbackExit;
         this.doorArea = doorArea;
         this.doorHeight = doorHeight;
         var doorDirection = LayoutCreator.Vector2At(segment.endPoint - segment.startPoint, 0).normalized;
@@ -53,6 +56,11 @@ public class Door : MonoBehaviour
     {
         //Debug.Log("Collision detected on " + gameObject.name + " with " + collider.gameObject.name);
         onCollisionEnter(collider, this);
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        onCollisionExit(other, this);
     }
 
     public bool isInsideDoorArea(Vector3 point, float doorArea)
