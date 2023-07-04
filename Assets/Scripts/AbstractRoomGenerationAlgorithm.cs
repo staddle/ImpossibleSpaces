@@ -37,7 +37,7 @@ namespace Assets.Scripts
             System.Random random = new();
 
             var journey = get().getJourney();
-            if (journey != null)
+            if (journey != null && journey.enabled)
             {
                 options = journey.optionsForDepth(previousRoom?.depth + 1 ?? 1);
             }

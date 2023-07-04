@@ -194,7 +194,7 @@ public partial class LayoutCreator : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (roomGeneratorOptions == null)
+        if (roomGeneratorOptions == null || CurrentRoom == null)
             return;
         if (roomDebugs.TryGetValue(CurrentRoom, out RoomDebug roomDebug))
         {

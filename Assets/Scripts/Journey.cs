@@ -21,8 +21,7 @@ public class Journey : MonoBehaviour
     {
         options = GetComponent<RoomGeneratorOptions>();  
         layoutCreator = LayoutCreator.get();
-        layoutCreator.subscribeToRoomSwitch(switchedRoom);
-        switchedRoom(0);
+        optionsForDepth(0);
     }
 
     /// <summary>

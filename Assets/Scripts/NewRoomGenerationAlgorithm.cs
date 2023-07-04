@@ -124,15 +124,6 @@ namespace Assets.Scripts
             float maxDistance = (float)Math.Sqrt(Math.Pow(options.playArea.x, 2) + Math.Pow(options.playArea.y, 2));
             foreach (Vector3 direction in directions)
             {
-                /*if (Physics.Raycast(position, direction, out RaycastHit hit, maxDistance))
-                {
-                    //hit with wall?
-                    if(hit.transform.parent != null && hit.transform.parent.gameObject.name == "PlayArea")
-                    {
-                        raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
-                        return true;
-                    }
-                }*/
                 bool correctHitPreviousLayer = false;
                 for (int i = currentRoom.LayerNumber - 1; i < currentRoom.LayerNumber + options.depthForward; i++)
                 {
