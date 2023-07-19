@@ -164,30 +164,37 @@ namespace Assets.Scripts
         private DoorHit hittingDoorAtDepth(Door door, int depth, Vector3 position, Vector3 direction, float maxDistance)
         {
             int depthMask = 1 << depth;
-            if (Physics.Raycast(position, direction, out RaycastHit hit, maxDistance, depthMask))
+            try
             {
-                Door respectiveDoor = null;
-                if (door.nextNode != null)
-                    respectiveDoor = door.nextNode.doors.Find(x => x.position == door.position);
-                //somehow ignore repsective doors at other room (why does this door not have nextNode?)
-                if (hit.transform == door.transform || (respectiveDoor != null && hit.transform == respectiveDoor.transform))
+                if (Physics.Raycast(position, direction, out RaycastHit hit, maxDistance, depthMask))
                 {
-                    //Debug.Log("Door is visible");
-                    raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
-                    return DoorHit.CORRECT_DOOR;
-                }
-                else if (hit.transform.gameObject.GetComponent<Door>() != null)
-                {
-                    if (hittingDoorAtDepth(door, depth, hit.point, direction, maxDistance) == DoorHit.CORRECT_DOOR)
+                    Door respectiveDoor = null;
+                    if (door.nextNode != null)
+                        respectiveDoor = door.nextNode.doors.Find(x => x.position == door.position);
+                    //somehow ignore repsective doors at other room (why does this door not have nextNode?)
+                    if (hit.transform == door.transform || (respectiveDoor != null && hit.transform == respectiveDoor.transform))
                     {
+                        //Debug.Log("Door is visible");
                         raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
                         return DoorHit.CORRECT_DOOR;
                     }
+                    else if (hit.transform.gameObject.GetComponent<Door>() != null)
+                    {
+                        if (hittingDoorAtDepth(door, depth, hit.point, direction, maxDistance) == DoorHit.CORRECT_DOOR)
+                        {
+                            raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, true));
+                            return DoorHit.CORRECT_DOOR;
+                        }
+                        raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
+                        return DoorHit.OTHER_DOOR;
+                    }
                     raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
-                    return DoorHit.OTHER_DOOR;
+                    return DoorHit.WALLS;
                 }
-                raycasts.Add(new Tuple<Vector3, Vector3, bool>(position, hit.point, false));
-                return DoorHit.WALLS;
+            }
+            catch(Exception e)
+            {
+                Debug.LogError("Exception while raycasting: " + e.Message + "\n" + depthMask + " " + maxDistance + "\n" + position + "\n" + direction);
             }
             return DoorHit.NOTHING;
         }

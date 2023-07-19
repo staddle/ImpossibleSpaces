@@ -19,7 +19,6 @@ public class Journey : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        options = GetComponent<RoomGeneratorOptions>();  
         layoutCreator = LayoutCreator.get();
         optionsForDepth(0);
     }
@@ -36,6 +35,8 @@ public class Journey : MonoBehaviour
 
     public RoomGeneratorOptions optionsForDepth(int d)
     {
+        if (options == null)
+            options = GetComponent<RoomGeneratorOptions>();
         switch (journeyType)
         {
             case JourneyType.BigToSmall:
